@@ -1,5 +1,6 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-import { Vehicle, VehicleType, DossierType, DossierStatus } from '@/types';
+import { Vehicle, VehicleType, VehicleStatus, DossierType, DossierStatus } from '@/types';
+
 
 class ApiClient {
   private token: string | null = null;
@@ -36,6 +37,15 @@ class ApiClient {
     return this.fetch(`/vehicles${qs}`);
   }
   getVehicle(id: string) { return this.fetch(`/vehicles/${id}`); }
+  createVehicle(data: Partial<Vehicle>) {
+    return this.fetch('/vehicles', { method: 'POST', body: JSON.stringify(data) });
+  }
+  deleteVehicle(id: string) {
+    return this.fetch(`/vehicles/${id}`, { method: 'DELETE' });
+  }
+  basculerVehicle(id: string, status: VehicleStatus) {
+    return this.fetch(`/vehicles/${id}/bascule`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  }
 
   createDossier(data: { vehicleId: string | null; type: DossierType }) {
     return this.fetch('/dossiers', { method: 'POST', body: JSON.stringify(data) });
