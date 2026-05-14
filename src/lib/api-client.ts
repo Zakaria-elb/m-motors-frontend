@@ -1,4 +1,5 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { Vehicle, VehicleType, DossierType, DossierStatus } from '@/types';
 
 class ApiClient {
   private token: string | null = null;
