@@ -1,40 +1,23 @@
-// ============================================
-// PAGE D'ACCUEIL : Vitrine & Recherche de véhicules
-// 'use client' = cette page est interactive (hooks React autorisés)
-// ============================================
-
 'use client';
 
-import { useEffect, useState } from "react"; // useState = stocker des données / useEffect = action au chargement
-import Link from "next/link";               // Link = navigation rapide sans rechargement de page
-import { api } from "@/lib/api-client";    // Notre "facteur" pour parler au backend
-import { Vehicle, VehicleType } from "@/types"; // Notre "dictionnaire" de données
+import { useEffect, useState } from "react";
+import Link from 'next/link';
+import { api } from '@/lib/api-client';
+import { Vehicle, VehicleType } from '@/types';
 
 export default function HomePage() {
-  // --- ÉTAT (state) de la page ---
-  // "vehicles" = la liste des voitures affichées. Au départ : tableau vide [].
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  
-  // "filter" = le filtre actif (TOUS, ACHAT, LOCATION). Au départ : "ALL".
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<VehicleType | "ALL">("ALL");
 
-  // --- CHARGEMENT DES DONNÉES ---
-  // useEffect dit : "Exécute ce code UNE FOIS, au moment où le composant apparaît à l'écran"
   useEffect(() => {
-    async function loadVehicles() {
-      try {
-        // Si le filtre est "ALL", on ne met pas de paramètre. Sinon on envoie ?type=ACHAT ou ?type=LOCATION
-        const params = filter === "ALL" ? undefined : { type: filter };
-        const data = await api.getVehicles(params);
-        setVehicles(data); // On stocke les voitures reçues dans notre state
-      } catch (error) {
-        console.error("Erreur chargement véhicules:", error);
-      }
-    }
-    loadVehicles();
-  }, [filter]); // Le [filter] signifie : "Re-lance ce code SI 'filter' change"
+    setLoading(true);
+    const params = filter === "ALL" ? undefined : { type: filter };
+    api.getVehicles(params)
+      .then((res: Vehicle[]) => setVehicles(res))
+      .finally(() => setLoading(false));
+  }, [filter]);
 
-  // Les 4 boutons de filtre
   const filters: { key: VehicleType | "ALL"; label: string }[] = [
     { key: "ALL", label: "Tous" },
     { key: "ACHAT", label: "Achat" },
@@ -42,87 +25,135 @@ export default function HomePage() {
     { key: "LES_DEUX", label: "Achat / Location" },
   ];
 
+  const getImage = (v: Vehicle) => {
+    if (v.imageUrls && v.imageUrls.length > 0 && v.imageUrls[0].startsWith('http')) {
+      return v.imageUrls[0];
+    }
+    // Placeholder intelligent avec couleur selon la marque
+    return `https://placehold.co/600x400/1e293b/FFF?text=${encodeURIComponent(v.brand + ' ' + v.model)}`;
+  };
+
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      {/* Titre */}
-      <h1 className="text-3xl font-bold mb-2">Nos véhicules d'occasion</h1>
-      <p className="text-gray-600 mb-6">
-        Trouvez votre prochain véhicule, à acheter ou à louer en LLD.
-      </p>
-
-      {/* BARRE DE FILTRES */}
-      <div className="flex gap-2 mb-8">
-        {filters.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)} // Au clic, on change le filtre → useEffect se déclenche
-            className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
-              filter === f.key
-                ? "bg-slate-900 text-white border-slate-900" // Style actif (sélectionné)
-                : "bg-white text-slate-700 hover:bg-gray-100" // Style inactif
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+    <div className="min-h-screen bg-gray-50">
+      {/* HERO BANNER */}
+      <div className="relative bg-slate-900 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-30">
+          <img
+            src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1600&q=80"
+            alt="Showroom"
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div className="relative max-w-7xl mx-auto px-4 py-16 sm:py-24 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
+            Votre prochain véhicule vous attend
+          </h1>
+          <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto">
+            Achat ou location longue durée — des véhicules d'occasion garantis et révisés, livrés chez vous.
+          </p>
+        </div>
       </div>
 
-      {/* GRILLE DE VÉHICULES */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {vehicles.map((v) => (
-          <div
-            key={v.id}
-            className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition"
-          >
-            {/* Image (on prend la première, ou un placeholder si absente) */}
-            <img
-              src={v.imageUrls[0] || "/car-placeholder.jpg"}
-              alt={`${v.brand} ${v.model}`}
-              className="w-full h-48 object-cover"
-            />
-            
-            <div className="p-4">
-              <div className="flex justify-between items-start mb-2">
-                <h2 className="text-lg font-bold">{v.brand} {v.model}</h2>
-                <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700">
-                  {v.year}
-                </span>
-              </div>
-              
-              <p className="text-gray-500 text-sm mb-3">
-                {v.mileage.toLocaleString()} km
-              </p>
-              
-              {/* Prix ou Loyer */}
-              <div className="mb-4">
-                {v.price && (
-                  <p className="text-xl font-bold text-blue-700">
-                    {v.price.toLocaleString()} €
-                  </p>
-                )}
-                {v.monthlyPrice && (
-                  <p className="text-xl font-bold text-green-700">
-                    {v.monthlyPrice} €/mois
-                  </p>
-                )}
-              </div>
-              
-              {/* Bouton vers la fiche détaillée */}
-              <Link
-                href={`/vehicules/${v.id}`}
-                className="block text-center bg-slate-900 text-white py-2 rounded-lg hover:bg-slate-800"
-              >
-                Voir la fiche
-              </Link>
-            </div>
+      {/* CONTENU PRINCIPAL */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* FILTRES */}
+        <div className="flex flex-wrap gap-3 mb-8 justify-center sm:justify-start">
+          {filters.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`px-5 py-2.5 rounded-full text-sm font-semibold border-2 transition-all duration-200 ${
+                filter === f.key
+                  ? "bg-slate-900 text-white border-slate-900 shadow-md"
+                  : "bg-white text-slate-700 border-gray-200 hover:border-blue-400 hover:text-blue-600"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* CHARGEMENT */}
+        {loading && (
+          <div className="flex justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
           </div>
-        ))}
+        )}
+
+        {/* GRILLE */}
+        {!loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {vehicles.map((v) => (
+              <div
+                key={v.id}
+                className="bg-white rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col"
+              >
+                {/* Image */}
+                <div className="relative h-56 bg-gray-100 overflow-hidden group">
+                  <img
+                    src={getImage(v)}
+                    alt={`${v.brand} ${v.model}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-3 right-3">
+                    <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-sm ${
+                      v.type === 'ACHAT' ? 'bg-blue-100 text-blue-800' :
+                      v.type === 'LOCATION' ? 'bg-green-100 text-green-800' :
+                      'bg-purple-100 text-purple-800'
+                    }`}>
+                      {v.type === 'ACHAT' ? 'ACHAT' : v.type === 'LOCATION' ? 'LOCATION' : 'ACHAT / LOC'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Contenu */}
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h2 className="text-lg font-bold text-slate-900">{v.brand} {v.model}</h2>
+                      <p className="text-sm text-gray-500">{v.year} • {v.mileage.toLocaleString()} km</p>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-gray-600 line-clamp-2 mb-4 flex-1">
+                    {v.description || 'Véhicule proposé par M-Motors avec garantie et révision complète.'}
+                  </p>
+
+                  {/* Prix */}
+                  <div className="mb-4">
+                    {v.price && (
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold text-slate-900">{Number(v.price).toLocaleString()} €</span>
+                      </div>
+                    )}
+                    {v.monthlyPrice && (
+                      <div className={`text-sm font-semibold ${v.price ? 'text-gray-500' : 'text-xl text-green-700'}`}>
+                        {v.price ? 'ou ' : ''}
+                        <span className={v.price ? '' : 'text-xl'}>{Number(v.monthlyPrice).toLocaleString()} €/mois</span>
+                        {v.price && <span className="font-normal text-gray-400"> en LLD</span>}
+                      </div>
+                    )}
+                  </div>
+
+                  <Link
+                    href={`/vehicules/${v.id}`}
+                    className="block text-center bg-slate-900 text-white py-3 rounded-xl font-semibold hover:bg-blue-600 transition-colors shadow-md"
+                  >
+                    Voir la fiche →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Aucun résultat */}
+        {!loading && vehicles.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-gray-400 text-lg">Aucun véhicule disponible pour le moment.</p>
+          </div>
+        )}
       </div>
-      
-      {/* Message si aucun véhicule */}
-      {vehicles.length === 0 && (
-        <p className="text-center text-gray-500 mt-10">Aucun véhicule disponible pour le moment.</p>
-      )}
     </div>
   );
 }
