@@ -21,8 +21,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const t = localStorage.getItem('token');
     if (t) {
       api.setToken(t);
-      api.me().then(setUser).catch(logout).finally(() => setLoading(false));
-    } else setLoading(false);
+      api.me()
+        .then(setUser)
+        .catch(() => {
+          // Token mort ou invalide : on efface proprement
+          localStorage.removeItem('token');
+          api.clearToken();
+          setUser(null);
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const login = async (email: string, password: string) => {

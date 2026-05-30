@@ -2,13 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
-import { Vehicle, VehicleStatus, VehicleType } from "@/types";
+import { Vehicle, VehicleStatus } from "@/types";
+
+const statusBadge: Record<string, string> = {
+  A_VENDRE: 'bg-green-100 text-green-800',
+  EN_LOCATION: 'bg-blue-100 text-blue-800',
+  LES_DEUX: 'bg-purple-100 text-purple-800',
+  VENDU: 'bg-gray-100 text-gray-500',
+  LOUE: 'bg-gray-100 text-gray-500',
+};
 
 export default function AdminVehiculesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [showForm, setShowForm] = useState(false);
 
-  // Charger la liste au montage
   useEffect(() => {
     loadVehicles();
   }, []);
@@ -17,11 +24,9 @@ export default function AdminVehiculesPage() {
     api.getVehicles().then(setVehicles);
   }
 
-  // Soumission du formulaire d'ajout
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-
     await api.createVehicle({
       brand: fd.get("brand") as string,
       model: fd.get("model") as string,
@@ -30,110 +35,160 @@ export default function AdminVehiculesPage() {
       price: fd.get("price") ? Number(fd.get("price")) : undefined,
       monthlyPrice: fd.get("monthlyPrice") ? Number(fd.get("monthlyPrice")) : undefined,
       status: fd.get("status") as VehicleStatus,
-      type: fd.get("type") as VehicleType,
+      type: fd.get("type") as VehicleStatus,
       description: fd.get("description") as string,
     });
-
     setShowForm(false);
     e.currentTarget.reset();
     loadVehicles();
   }
 
-  // Basculer un véhicule de location -> vente ou inversement
   async function basculer(v: Vehicle) {
     const nextStatus: VehicleStatus =
-      v.status === "EN_LOCATION" ? "A_VENDRE" :
-      v.status === "A_VENDRE" ? "EN_LOCATION" :
-      "LES_DEUX";
-
+      v.status === 'EN_LOCATION' ? 'A_VENDRE' :
+      v.status === 'A_VENDRE' ? 'EN_LOCATION' : 'LES_DEUX';
     await api.basculerVehicle(v.id, nextStatus);
     loadVehicles();
   }
 
-  // Supprimer
   async function supprimer(id: string) {
-    if (!confirm("Confirmer la suppression ?")) return;
+    if (!confirm('Confirmer la suppression ?')) return;
     await api.deleteVehicle(id);
     loadVehicles();
   }
 
   return (
     <div>
+      {/* Header stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border p-4">
+          <p className="text-sm text-gray-600">Total véhicules</p>
+          <p className="text-2xl font-bold text-slate-900">{vehicles.length}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border p-4">
+          <p className="text-sm text-gray-600">À vendre</p>
+          <p className="text-2xl font-bold text-green-700">{vehicles.filter(v => v.status === 'A_VENDRE' || v.status === 'LES_DEUX').length}</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border p-4">
+          <p className="text-sm text-gray-600">En location</p>
+          <p className="text-2xl font-bold text-blue-700">{vehicles.filter(v => v.status === 'EN_LOCATION' || v.status === 'LES_DEUX').length}</p>
+        </div>
+      </div>
+
+      {/* Bouton ajouter */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Gestion des véhicules</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Gestion des véhicules</h1>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-medium flex items-center gap-2"
         >
-          {showForm ? "Fermer" : "+ Ajouter un véhicule"}
+          {showForm ? '✕ Fermer' : '＋ Ajouter un véhicule'}
         </button>
       </div>
 
       {/* Formulaire d'ajout */}
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-white p-4 rounded-lg shadow mb-6 grid grid-cols-2 gap-4 border">
-          <input name="brand" placeholder="Marque" required className="border rounded px-3 py-2" />
-          <input name="model" placeholder="Modèle" required className="border rounded px-3 py-2" />
-          <input name="year" placeholder="Année" type="number" required className="border rounded px-3 py-2" />
-          <input name="mileage" placeholder="Kilométrage" type="number" required className="border rounded px-3 py-2" />
-          <input name="price" placeholder="Prix vente (€)" type="number" className="border rounded px-3 py-2" />
-          <input name="monthlyPrice" placeholder="Loyer mensuel (€)" type="number" className="border rounded px-3 py-2" />
-          
-          <select name="status" required className="border rounded px-3 py-2">
+        <form onSubmit={handleCreate} className="bg-white p-5 rounded-xl shadow-sm border mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input name="brand" placeholder="Marque *" required className="border rounded-lg px-3 py-2" />
+          <input name="model" placeholder="Modèle *" required className="border rounded-lg px-3 py-2" />
+          <input name="year" placeholder="Année *" type="number" required className="border rounded-lg px-3 py-2" />
+          <input name="mileage" placeholder="Kilométrage *" type="number" required className="border rounded-lg px-3 py-2" />
+          <input name="price" placeholder="Prix vente (€)" type="number" className="border rounded-lg px-3 py-2" />
+          <input name="monthlyPrice" placeholder="Loyer mensuel (€)" type="number" className="border rounded-lg px-3 py-2" />
+          <select name="status" required className="border rounded-lg px-3 py-2">
             <option value="A_VENDRE">À vendre</option>
             <option value="EN_LOCATION">En location</option>
             <option value="LES_DEUX">Les deux</option>
           </select>
-          
-          <select name="type" required className="border rounded px-3 py-2">
+          <select name="type" required className="border rounded-lg px-3 py-2">
             <option value="ACHAT">Achat</option>
             <option value="LOCATION">Location</option>
             <option value="LES_DEUX">Achat / Location</option>
           </select>
-          
-          <textarea name="description" placeholder="Description..." className="col-span-2 border rounded px-3 py-2" />
-          
-          <div className="col-span-2">
-            <button type="submit" className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800">
-              Enregistrer le véhicule
+          <textarea name="description" placeholder="Description..." className="md:col-span-2 border rounded-lg px-3 py-2" rows={3} />
+          <div className="md:col-span-2 flex gap-2">
+            <button type="submit" className="bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-800 transition font-medium">
+              Enregistrer
             </button>
           </div>
         </form>
       )}
 
-      {/* Tableau des véhicules */}
-      <div className="bg-white rounded-lg shadow border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-100 text-gray-700">
-            <tr>
-              <th className="text-left p-3">Véhicule</th>
-              <th className="p-3">Statut stock</th>
-              <th className="p-3">Offre</th>
-              <th className="p-3">Prix / Loyer</th>
-              <th className="p-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {vehicles.map((v) => (
-              <tr key={v.id} className="border-t">
-                <td className="p-3 font-medium">{v.brand} {v.model} <span className="text-gray-400">({v.year})</span></td>
-                <td className="p-3 text-center"><span className="px-2 py-1 rounded bg-gray-100">{v.status}</span></td>
-                <td className="p-3 text-center">{v.type}</td>
-                <td className="p-3 text-center">
-                  {v.price ? `${v.price.toLocaleString()} €` : "-"} / {v.monthlyPrice ? `${v.monthlyPrice} €/m` : "-"}
-                </td>
-                <td className="p-3 text-right space-x-2">
-                  <button onClick={() => basculer(v)} className="text-blue-700 hover:underline text-xs">
-                    Basculer
-                  </button>
-                  <button onClick={() => supprimer(v.id)} className="text-red-600 hover:underline text-xs">
-                    Supprimer
-                  </button>
-                </td>
+      {/* Tableau */}
+      <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-800 text-white">
+              <tr>
+                <th className="text-left p-3 font-medium">Véhicule</th>
+                <th className="p-3 font-medium text-center">Année</th>
+                <th className="p-3 font-medium text-center">Statut stock</th>
+                <th className="p-3 font-medium text-center">Offre</th>
+                <th className="p-3 font-medium text-right">Prix / Loyer</th>
+                <th className="p-3 font-medium text-center">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {vehicles.map((v) => (
+                <tr key={v.id} className="border-t hover:bg-gray-50 transition">
+                  <td className="p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center text-lg">
+                        {v.imageUrls?.[0] ? (
+                          <img src={v.imageUrls[0]} alt="" className="w-full h-full object-cover" />
+                        ) : '🚗'}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">{v.brand} {v.model}</p>
+                        <p className="text-xs text-gray-500">{v.mileage.toLocaleString()} km</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-3 text-center text-gray-700">{v.year}</td>
+                  <td className="p-3 text-center">
+                    <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold ${statusBadge[v.status] || 'bg-gray-100 text-gray-700'}`}>
+                      {v.status.replace(/_/g, ' ')}
+                    </span>
+                  </td>
+                  <td className="p-3 text-center text-gray-700">{v.type.replace(/_/g, ' ')}</td>
+                  <td className="p-3 text-right">
+                    {v.price && v.type !== 'LOCATION' && (
+                      <p className="font-bold text-slate-900">{Number(v.price).toLocaleString()} €</p>
+                    )}
+                    {v.monthlyPrice && v.type !== 'ACHAT' && (
+                      <p className="text-xs font-medium text-gray-600">{Number(v.monthlyPrice).toLocaleString()} €/mois</p>
+                    )}
+                  </td>
+                  <td className="p-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => basculer(v)}
+                        className="text-xs bg-blue-50 text-blue-700 px-2 py-1.5 rounded hover:bg-blue-100 transition font-medium"
+                        title="Basculer le statut"
+                      >
+                        🔄 Basculer
+                      </button>
+                      <button
+                        onClick={() => supprimer(v.id)}
+                        className="text-xs bg-red-50 text-red-700 px-2 py-1.5 rounded hover:bg-red-100 transition font-medium"
+                        title="Supprimer"
+                      >
+                        🗑️ Suppr.
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {vehicles.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-gray-500">
+                    Aucun véhicule enregistré.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

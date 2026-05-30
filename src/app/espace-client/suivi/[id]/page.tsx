@@ -6,7 +6,7 @@ import Link from "next/link";
 import { api } from "@/lib/api-client";
 import { Dossier, DossierStatus } from "@/types";
 
-// Les 5 étapes fixes de la vie d'un dossier, dans l'ordre chronologique
+
 const timelineSteps: { status: DossierStatus; label: string; desc: string }[] = [
   { status: "BROUILLON", label: "Brouillon", desc: "Dossier initié" },
   { status: "EN_ATTENTE", label: "Dépôt", desc: "Documents envoyés" },
@@ -16,94 +16,109 @@ const timelineSteps: { status: DossierStatus; label: string; desc: string }[] = 
 ];
 
 export default function SuiviPage() {
-  const { id } = useParams(); // Récupère l'ID du dossier dans l'URL
+  const { id } = useParams();
   const [dossier, setDossier] = useState<Dossier | null>(null);
 
-  // Va chercher les détails du dossier au chargement
-  useEffect(() => {
-    if (id) api.getDossier(id as string).then(setDossier);
-  }, [id]);
+  const { user } = useAuth();
 
-  if (!dossier) return <div className="p-10 text-center">Chargement...</div>;
+useEffect(() => {
+  if (!user || !id) return;
+  api.getDossier(id as string)
+    .then(setDossier)
+    .catch(() => setDossier(null));
+}, [user, id]);
 
-  // On cherche à quel index se trouve le statut actuel du dossier
+
+  if (!dossier) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+      </div>
+    );
+  }
+
   const activeIndex = timelineSteps.findIndex((s) => s.status === dossier.status);
   const isRefused = dossier.status === "REFUSE";
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      {/* Lien retour */}
-      <Link href="/espace-client" className="text-sm text-blue-600 hover:underline">
-        ← Retour
-      </Link>
+    <div className="min-h-screen bg-gray-50 py-10">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Link href="/espace-client" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
+          ← Retour à mes dossiers
+        </Link>
 
-      <h1 className="text-2xl font-bold mt-4 mb-1">Suivi de votre dossier</h1>
-      <p className="text-gray-600 mb-8">
-        {dossier.vehicle.brand} {dossier.vehicle.model}
-      </p>
-
-      {/* TIMELINE */}
-      <div className="relative space-y-6">
-        {timelineSteps.map((step, idx) => {
-          // Une étape est "faite" si son index est <= l'index actuel
-          const done = idx <= activeIndex && !isRefused;
-          // C'est l'étape en cours si c'est exactement l'index actuel
-          const current = idx === activeIndex && !isRefused;
-
-          return (
-            <div
-              key={step.status}
-              className={`flex gap-4 items-start p-4 rounded-lg border-l-4 ${
-                done
-                  ? "bg-green-50 border-green-600"
-                  : "bg-gray-50 border-gray-300"
-              } ${current ? "ring-2 ring-green-200" : ""}`}
-            >
-              {/* Cercle numéroté ou check vert */}
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                  done ? "bg-green-600 text-white" : "bg-gray-300 text-gray-600"
-                }`}
-              >
-                {done ? "✓" : idx + 1}
-              </div>
-
-              {/* Texte de l'étape */}
-              <div>
-                <p className="font-bold">{step.label}</p>
-                <p className="text-sm text-gray-600">{step.desc}</p>
-                {current && (
-                  <p className="text-xs text-green-700 mt-1 font-medium">
-                    Statut actuel
-                  </p>
-                )}
-              </div>
+        {/* En-tête */}
+        <div className="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden">
+              {dossier.vehicle.imageUrls?.[0] ? (
+                <img src={dossier.vehicle.imageUrls[0]} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">🚗</div>
+              )}
             </div>
-          );
-        })}
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Suivi du dossier</h1>
+              <p className="text-gray-600">{dossier.vehicle.brand} {dossier.vehicle.model} • {dossier.type === "ACHAT" ? "Achat" : "Location"}</p>
+            </div>
+          </div>
+        </div>
 
-        {/* Si le dossier est refusé, on affiche un bloc rouge en bas */}
-        {isRefused && (
-          <div className="p-4 bg-red-50 border-l-4 border-red-600 rounded-lg">
-            <p className="font-bold text-red-800">Dossier refusé</p>
-            <p className="text-sm text-red-700 mt-1">
-              Motif : {dossier.adminComment || "Non précisé"}
-            </p>
+        {/* Timeline */}
+        <div className="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+          <h2 className="font-bold text-slate-900 mb-6">Avancement</h2>
+          <div className="relative">
+            {timelineSteps.map((step, idx) => {
+              const done = idx <= activeIndex && !isRefused;
+              const current = idx === activeIndex && !isRefused;
+
+              return (
+                <div key={step.status} className="flex gap-4 mb-6 last:mb-0 relative">
+                  {/* Ligne verticale de connexion */}
+                  {idx !== timelineSteps.length - 1 && (
+                    <div className={`absolute left-5 top-10 w-0.5 h-full ${done ? 'bg-green-500' : 'bg-gray-200'}`}></div>
+                  )}
+
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 z-10 border-2 ${done ? 'bg-green-600 border-green-600 text-white' : 'bg-white border-gray-300 text-gray-400'}`}>
+                    {done ? "✓" : idx + 1}
+                  </div>
+
+                  <div className={`pb-6 flex-1 ${current ? 'bg-green-50 rounded-lg p-3 -m-3 border border-green-200' : ''}`}>
+                    <p className="font-bold text-slate-900">{step.label}</p>
+                    <p className="text-sm text-gray-600">{step.desc}</p>
+                    {current && <p className="text-xs text-green-700 font-semibold mt-1">Statut actuel</p>}
+                  </div>
+                </div>
+              );
+            })}
+
+            {isRefused && (
+              <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-600 rounded-xl">
+                <p className="font-bold text-red-800">Dossier refusé</p>
+                <p className="text-sm text-red-700 mt-1">Motif : {dossier.adminComment || "Non précisé"}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Documents */}
+        {dossier.documents && dossier.documents.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border p-6">
+            <h2 className="font-bold text-slate-900 mb-4">Documents transmis</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {dossier.documents.map((doc) => (
+                <div key={doc.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border">
+                  <div className="text-2xl">📄</div>
+                  <div className="overflow-hidden">
+                    <p className="text-sm font-medium text-slate-900 truncate">{doc.originalName}</p>
+                    <p className="text-xs text-gray-500 uppercase">{doc.mimeType}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
-
-      {/* Liste des documents transmis */}
-      {dossier.documents && dossier.documents.length > 0 && (
-        <div className="mt-8">
-          <h3 className="font-semibold mb-2">Documents transmis</h3>
-          <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
-            {dossier.documents.map((doc) => (
-              <li key={doc.id}>{doc.originalName}</li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

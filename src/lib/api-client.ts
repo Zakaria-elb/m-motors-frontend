@@ -30,7 +30,7 @@ class ApiClient {
   register(data: { email: string; password: string; firstName: string; lastName: string }) {
     return this.fetch('/auth/register', { method: 'POST', body: JSON.stringify(data) });
   }
-  me() { return this.fetch('/users/me'); }
+  me() { return this.fetch('/auth/me'); }
 
   getVehicles(params?: Record<string, string>) {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';

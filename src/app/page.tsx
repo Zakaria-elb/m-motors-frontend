@@ -26,12 +26,17 @@ export default function HomePage() {
   ];
 
   const getImage = (v: Vehicle) => {
-    if (v.imageUrls && v.imageUrls.length > 0 && v.imageUrls[0].startsWith('http')) {
-      return v.imageUrls[0];
+    if (v.imageUrls && v.imageUrls.length > 0) {
+      const url = v.imageUrls[0];
+      // Accepte les URLs http/https ET les chemins locaux commençant par /
+      if (url.startsWith('http') || url.startsWith('/')) {
+        return url;
+      }
     }
-    // Placeholder intelligent avec couleur selon la marque
+    // Fallback si aucune image valide
     return `https://placehold.co/600x400/1e293b/FFF?text=${encodeURIComponent(v.brand + ' ' + v.model)}`;
   };
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -55,7 +60,7 @@ export default function HomePage() {
       </div>
 
       {/* CONTENU PRINCIPAL */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* FILTRES */}
         <div className="flex flex-wrap gap-3 mb-8 justify-center sm:justify-start">
           {filters.map((f) => (
@@ -82,7 +87,7 @@ export default function HomePage() {
 
         {/* GRILLE */}
         {!loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {vehicles.map((v) => (
               <div
                 key={v.id}
@@ -121,19 +126,22 @@ export default function HomePage() {
 
                   {/* Prix */}
                   <div className="mb-4">
-                    {v.price && (
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold text-slate-900">{Number(v.price).toLocaleString()} €</span>
-                      </div>
-                    )}
-                    {v.monthlyPrice && (
-                      <div className={`text-sm font-semibold ${v.price ? 'text-gray-500' : 'text-xl text-green-700'}`}>
-                        {v.price ? 'ou ' : ''}
-                        <span className={v.price ? '' : 'text-xl'}>{Number(v.monthlyPrice).toLocaleString()} €/mois</span>
-                        {v.price && <span className="font-normal text-gray-400"> en LLD</span>}
-                      </div>
-                    )}
-                  </div>
+  {/* Prix d'achat affiché sauf si LOCATION uniquement */}
+  {v.price && v.type !== 'LOCATION' && (
+    <div className="flex items-baseline gap-1">
+      <span className="text-2xl font-bold text-slate-900">{Number(v.price).toLocaleString()} €</span>
+    </div>
+  )}
+
+  {/* Loyer affiché sauf si ACHAT uniquement */}
+  {v.monthlyPrice && v.type !== 'ACHAT' && (
+    <div className={`text-sm font-semibold ${v.price && v.type !== 'LOCATION' ? 'text-gray-500' : 'text-xl text-green-700'}`}>
+      {v.price && v.type !== 'LOCATION' ? 'ou ' : ''}
+      <span className={v.price && v.type !== 'LOCATION' ? '' : 'text-xl'}>{Number(v.monthlyPrice).toLocaleString()} €/mois</span>
+      {v.price && v.type !== 'LOCATION' && <span className="font-normal text-gray-400"> en LLD</span>}
+    </div>
+  )}
+</div>
 
                   <Link
                     href={`/vehicules/${v.id}`}
