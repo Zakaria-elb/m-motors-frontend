@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from 'next/link';
 import { api } from '@/lib/api-client';
 import { Vehicle, VehicleType } from '@/types';
+import { resolveImageUrl } from '@/lib/image-utils';
 
 export default function HomePage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -25,18 +26,16 @@ export default function HomePage() {
     { key: "LES_DEUX", label: "Achat / Location" },
   ];
 
+
+
+
   const getImage = (v: Vehicle) => {
     if (v.imageUrls && v.imageUrls.length > 0) {
-      const url = v.imageUrls[0];
-      // Accepte les URLs http/https ET les chemins locaux commençant par /
-      if (url.startsWith('http') || url.startsWith('/')) {
-        return url;
-      }
+      return resolveImageUrl(v.imageUrls[0]);
     }
-    // Fallback si aucune image valide
     return `https://placehold.co/600x400/1e293b/FFF?text=${encodeURIComponent(v.brand + ' ' + v.model)}`;
   };
-
+  
 
   return (
     <div className="min-h-screen bg-gray-50">

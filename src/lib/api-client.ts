@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+
 import { Vehicle, VehicleType, VehicleStatus, DossierType, DossierStatus } from '@/types';
 
 
@@ -43,10 +45,21 @@ class ApiClient {
   deleteVehicle(id: string) {
     return this.fetch(`/vehicles/${id}`, { method: 'DELETE' });
   }
-  basculerVehicle(id: string, status: VehicleStatus) {
-    return this.fetch(`/vehicles/${id}/bascule`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  createVehicleForm(formData: FormData) {
+    return this.fetch('/vehicles', {
+      method: 'POST',
+      body: formData,
+      headers: {}
+    });
   }
-
+  
+  basculerVehicle(id: string, status: VehicleStatus, extra?: { price?: number; monthlyPrice?: number }) {
+    return this.fetch(`/vehicles/${id}/bascule`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, ...extra })
+    });
+  }
+  
   createDossier(data: { vehicleId: string | null; type: DossierType }) {
     return this.fetch('/dossiers', { method: 'POST', body: JSON.stringify(data) });
   }

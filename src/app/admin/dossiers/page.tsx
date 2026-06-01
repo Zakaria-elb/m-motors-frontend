@@ -74,21 +74,23 @@ export default function AdminDossiersPage() {
       {/* Filtres */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
         {filters.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-              filter === f.key
-                ? 'bg-slate-900 text-white shadow-md'
-                : 'bg-white border hover:bg-gray-50'
-            }`}
-          >
-            {f.label} {f.key !== 'ALL' && (
-              <span className="ml-1 text-xs opacity-75">
-                {dossiers.filter(d => f.key === 'ALL' || d.status === f.key).length}
-              </span>
-            )}
-          </button>
+                    <button
+                    key={f.key}
+                    onClick={() => setFilter(f.key)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
+                      filter === f.key
+                        ? 'bg-slate-900 text-white shadow-md'
+                        : 'bg-white border hover:bg-gray-50'
+                    }`}
+                  >
+                    {f.label}
+                    {f.key !== 'ALL' && (
+                      <span className="ml-1 text-xs opacity-75">
+                        {dossiers.filter(d => d.status === f.key).length}
+                      </span>
+                    )}
+                  </button>
+        
         ))}
       </div>
 
@@ -107,7 +109,8 @@ export default function AdminDossiersPage() {
                 </span>
               </div>
               <p className="text-sm text-gray-600">
-                Client : <span className="font-medium">{d.vehicle.user?.email || 'Inconnu'}</span>
+              Client : <span className="font-medium">{d.user?.email || 'Inconnu'}</span>
+
                 {' • '}Déposé le {new Date(d.createdAt).toLocaleDateString('fr-FR')}
               </p>
               {d.adminComment && (

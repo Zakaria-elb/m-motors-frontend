@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api-client";
 import { Dossier, DossierStatus } from "@/types";
+import { useAuth } from '@/providers/auth-provider';
 
 
 const timelineSteps: { status: DossierStatus; label: string; desc: string }[] = [

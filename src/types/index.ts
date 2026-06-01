@@ -38,6 +38,7 @@ export interface Dossier {
   type: DossierType;
   status: DossierStatus;
   vehicle: Vehicle;
+  user?: { email?: string };  // ← AJOUTER CETTE LIGNE
   createdAt: string;
   updatedAt: string;
   documents?: DocumentFile[];

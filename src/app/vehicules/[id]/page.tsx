@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api-client";
 import { Vehicle } from "@/types";
+import { resolveImageUrl } from '@/lib/image-utils';
 
 export default function VehicleDetailPage() {
   const { id } = useParams();
@@ -45,16 +46,11 @@ export default function VehicleDetailPage() {
 
   const getImage = () => {
     if (vehicle.imageUrls && vehicle.imageUrls.length > 0) {
-      const url = vehicle.imageUrls[0];
-      // Accepte les URLs http/https ET les chemins locaux commençant par /
-      if (url.startsWith('http') || url.startsWith('/')) {
-        return url;
-      }
+      return resolveImageUrl(vehicle.imageUrls[0]);
     }
-    // Fallback
     return `https://placehold.co/800x500/1e293b/FFF?text=${encodeURIComponent(vehicle.brand + ' ' + vehicle.model)}`;
   };
-
+  
 
   const badgeColor = () => {
     if (vehicle.type === 'ACHAT') return 'bg-blue-100 text-blue-800';
