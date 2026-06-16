@@ -4,42 +4,75 @@ import { useEffect, useState } from "react";
 import Link from 'next/link';
 import { api } from '@/lib/api-client';
 import { Vehicle, VehicleType } from '@/types';
-import { resolveImageUrl } from '@/lib/image-utils';
 
 export default function HomePage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<VehicleType | "ALL">("ALL");
+  const [filterType, setFilterType] = useState<VehicleType | 'ALL'>('ALL');
+
+  // État du formulaire de recherche
+  const [filters, setFilters] = useState({
+    brand: '',
+    model: '',
+    minPrice: '',
+    maxPrice: '',
+    maxMileage: '',
+  });
+  const [searchError, setSearchError] = useState('');
 
   useEffect(() => {
     setLoading(true);
-    const params = filter === "ALL" ? undefined : { type: filter };
-    api.getVehicles(params)
-      .then((res: Vehicle[]) => setVehicles(res))
-      .finally(() => setLoading(false));
-  }, [filter]);
+    setSearchError('');
 
-  const filters: { key: VehicleType | "ALL"; label: string }[] = [
-    { key: "ALL", label: "Tous" },
-    { key: "ACHAT", label: "Achat" },
-    { key: "LOCATION", label: "Location" },
-    { key: "LES_DEUX", label: "Achat / Location" },
+    const params: Record<string, string> = {};
+    if (filterType !== 'ALL') params.type = filterType;
+    if (filters.brand.trim()) params.brand = filters.brand.trim();
+    if (filters.model.trim()) params.model = filters.model.trim();
+    if (filters.minPrice) params.minPrice = filters.minPrice;
+    if (filters.maxPrice) params.maxPrice = filters.maxPrice;
+    if (filters.maxMileage) params.maxMileage = filters.maxMileage;
+
+    // Validation côté client
+    if (params.minPrice && params.maxPrice && Number(params.minPrice) > Number(params.maxPrice)) {
+      setSearchError('Le prix minimum ne peut pas être supérieur au prix maximum.');
+      setLoading(false);
+      return;
+    }
+
+    api.getVehicles(Object.keys(params).length ? params : undefined)
+      .then((res: Vehicle[]) => setVehicles(res))
+      .catch(() => setVehicles([]))
+      .finally(() => setLoading(false));
+  }, [filterType, filters]);
+
+  const typeButtons: { key: VehicleType | 'ALL'; label: string }[] = [
+    { key: 'ALL', label: 'Tous' },
+    { key: 'ACHAT', label: 'Achat' },
+    { key: 'LOCATION', label: 'Location' },
+    { key: 'LES_DEUX', label: 'Achat / Location' },
   ];
 
+  function handleReset() {
+    setFilters({ brand: '', model: '', minPrice: '', maxPrice: '', maxMileage: '' });
+    setFilterType('ALL');
+    setSearchError('');
+  }
 
-
+  const hasActiveFilters = filterType !== 'ALL' ||
+    filters.brand || filters.model || filters.minPrice ||
+    filters.maxPrice || filters.maxMileage;
 
   const getImage = (v: Vehicle) => {
     if (v.imageUrls && v.imageUrls.length > 0) {
-      return resolveImageUrl(v.imageUrls[0]);
+      const url = v.imageUrls[0];
+      if (url.startsWith('http') || url.startsWith('/')) return url;
     }
     return `https://placehold.co/600x400/1e293b/FFF?text=${encodeURIComponent(v.brand + ' ' + v.model)}`;
   };
-  
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* HERO BANNER */}
+      {/* HERO */}
       <div className="relative bg-slate-900 text-white overflow-hidden">
         <div className="absolute inset-0 opacity-30">
           <img
@@ -53,23 +86,83 @@ export default function HomePage() {
             Votre prochain véhicule vous attend
           </h1>
           <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto">
-            Achat ou location longue durée — des véhicules d'occasion garantis et révisés, livrés chez vous.
+            Achat ou location longue durée — des véhicules d'occasion garantis et révisés.
           </p>
         </div>
       </div>
 
-      {/* CONTENU PRINCIPAL */}
+      {/* CONTENU */}
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* FILTRES */}
+        
+        {/* PANNEAU DE RECHERCHE */}
+        <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Recherche avancée</h2>
+            {hasActiveFilters && (
+              <button
+                onClick={handleReset}
+                className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 transition"
+              >
+                ✕ Réinitialiser
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <input
+              type="text"
+              placeholder="Marque (ex: Renault)"
+              value={filters.brand}
+              onChange={(e) => setFilters({ ...filters, brand: e.target.value })}
+              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="text"
+              placeholder="Modèle (ex: Clio)"
+              value={filters.model}
+              onChange={(e) => setFilters({ ...filters, model: e.target.value })}
+              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="number"
+              placeholder="Prix min (€)"
+              value={filters.minPrice}
+              onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
+              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="number"
+              placeholder="Prix max (€)"
+              value={filters.maxPrice}
+              onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
+              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="number"
+              placeholder="Km max"
+              value={filters.maxMileage}
+              onChange={(e) => setFilters({ ...filters, maxMileage: e.target.value })}
+              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {searchError && (
+            <div className="mt-3 p-3 bg-red-50 border-l-4 border-red-500 rounded text-sm text-red-700">
+              {searchError}
+            </div>
+          )}
+        </div>
+
+        {/* FILTRES TYPE */}
         <div className="flex flex-wrap gap-3 mb-8 justify-center sm:justify-start">
-          {filters.map((f) => (
+          {typeButtons.map((f) => (
             <button
               key={f.key}
-              onClick={() => setFilter(f.key)}
+              onClick={() => setFilterType(f.key)}
               className={`px-5 py-2.5 rounded-full text-sm font-semibold border-2 transition-all duration-200 ${
-                filter === f.key
-                  ? "bg-slate-900 text-white border-slate-900 shadow-md"
-                  : "bg-white text-slate-700 border-gray-200 hover:border-blue-400 hover:text-blue-600"
+                filterType === f.key
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                  : 'bg-white text-slate-700 border-gray-200 hover:border-blue-400 hover:text-blue-600'
               }`}
             >
               {f.label}
@@ -92,7 +185,6 @@ export default function HomePage() {
                 key={v.id}
                 className="bg-white rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col"
               >
-                {/* Image */}
                 <div className="relative h-56 bg-gray-100 overflow-hidden group">
                   <img
                     src={getImage(v)}
@@ -110,7 +202,6 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Contenu */}
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-2">
                     <div>
@@ -123,24 +214,20 @@ export default function HomePage() {
                     {v.description || 'Véhicule proposé par M-Motors avec garantie et révision complète.'}
                   </p>
 
-                  {/* Prix */}
                   <div className="mb-4">
-  {/* Prix d'achat affiché sauf si LOCATION uniquement */}
-  {v.price && v.type !== 'LOCATION' && (
-    <div className="flex items-baseline gap-1">
-      <span className="text-2xl font-bold text-slate-900">{Number(v.price).toLocaleString()} €</span>
-    </div>
-  )}
-
-  {/* Loyer affiché sauf si ACHAT uniquement */}
-  {v.monthlyPrice && v.type !== 'ACHAT' && (
-    <div className={`text-sm font-semibold ${v.price && v.type !== 'LOCATION' ? 'text-gray-500' : 'text-xl text-green-700'}`}>
-      {v.price && v.type !== 'LOCATION' ? 'ou ' : ''}
-      <span className={v.price && v.type !== 'LOCATION' ? '' : 'text-xl'}>{Number(v.monthlyPrice).toLocaleString()} €/mois</span>
-      {v.price && v.type !== 'LOCATION' && <span className="font-normal text-gray-400"> en LLD</span>}
-    </div>
-  )}
-</div>
+                    {v.price && v.type !== 'LOCATION' && (
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold text-slate-900">{Number(v.price).toLocaleString()} €</span>
+                      </div>
+                    )}
+                    {v.monthlyPrice && v.type !== 'ACHAT' && (
+                      <div className={`text-sm font-semibold ${v.price ? 'text-gray-500' : 'text-xl text-green-700'}`}>
+                        {v.price ? 'ou ' : ''}
+                        <span className={v.price ? '' : 'text-xl'}>{Number(v.monthlyPrice).toLocaleString()} €/mois</span>
+                        {v.price && <span className="font-normal text-gray-400"> en LLD</span>}
+                      </div>
+                    )}
+                  </div>
 
                   <Link
                     href={`/vehicules/${v.id}`}
@@ -154,10 +241,24 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Aucun résultat */}
+        {/* AUCUN RÉSULTAT */}
         {!loading && vehicles.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-gray-400 text-lg">Aucun véhicule disponible pour le moment.</p>
+            <div className="text-5xl mb-4">🔍</div>
+            <p className="text-gray-900 text-lg font-semibold mb-2">
+              Aucun résultat ne correspond à vos critères
+            </p>
+            <p className="text-gray-500 mb-6">
+              Essayez d'élargir votre recherche ou de modifier les filtres.
+            </p>
+            {hasActiveFilters && (
+              <button
+                onClick={handleReset}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-500 transition font-medium"
+              >
+                Réinitialiser la recherche
+              </button>
+            )}
           </div>
         )}
       </div>
