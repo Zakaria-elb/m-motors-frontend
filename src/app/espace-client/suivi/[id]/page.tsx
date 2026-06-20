@@ -40,86 +40,128 @@ useEffect(() => {
 
   const activeIndex = timelineSteps.findIndex((s) => s.status === dossier.status);
   const isRefused = dossier.status === "REFUSE";
+ 
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link href="/espace-client" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
-          ← Retour à mes dossiers
-        </Link>
-
-        {/* En-tête */}
-        <div className="bg-white rounded-2xl shadow-sm border p-6 mb-6">
-          <div className="flex items-center gap-4 mb-2">
-            <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden">
-              {dossier.vehicle.imageUrls?.[0] ? (
-                <img src={dossier.vehicle.imageUrls[0]} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">🚗</div>
+     
+      <div className="min-h-screen bg-gray-50 py-10">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <Link href="/espace-client" className="text-sm text-blue-600 hover:underline mb-4 inline-block">
+            ← Retour à mes dossiers
+          </Link>
+  
+          {/* EN-TÊTE VÉHICULE */}
+          <div className="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-16 h-16 rounded-lg bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center text-2xl">
+                {dossier.vehicle.imageUrls?.[0] ? (
+                  <img src={dossier.vehicle.imageUrls[0]} alt="" className="w-full h-full object-cover" />
+                ) : '🚗'}
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900">Suivi de votre dossier</h1>
+                <p className="text-gray-600">{dossier.vehicle.brand} {dossier.vehicle.model} • {dossier.type === 'ACHAT' ? 'Achat' : 'Location'}</p>
+              </div>
+            </div>
+          </div>
+  
+          {/* 🔔 BANDEAU NOTIFICATION DÉCISION ADMIN */}
+          {dossier.status === 'VALIDE' && (
+            <div className="mb-6 p-5 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
+              <div className="text-2xl">✅</div>
+              <div>
+                <p className="font-bold text-green-800 text-lg">Votre dossier a été accepté !</p>
+                <p className="text-green-700 mt-1">Félicitations, votre demande a été validée par notre équipe.</p>
+                {dossier.adminComment && (
+                  <p className="text-sm text-green-800 mt-2 italic">« {dossier.adminComment} »</p>
+                )}
+                <p className="text-sm text-green-600 mt-3 font-medium">Prochaine étape : signature du contrat.</p>
+              </div>
+            </div>
+          )}
+  
+          {dossier.status === 'REFUSE' && (
+            <div className="mb-6 p-5 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+              <div className="text-2xl">❌</div>
+              <div>
+                <p className="font-bold text-red-800 text-lg">Votre dossier a été refusé</p>
+                <p className="text-red-700 mt-1">Nous ne sommes pas en mesure de donner suite à votre demande.</p>
+                {dossier.adminComment ? (
+                  <p className="text-sm text-red-800 mt-2 italic bg-white p-3 rounded border-l-4 border-red-400">Motif : {dossier.adminComment}</p>
+                ) : (
+                  <p className="text-sm text-red-600 mt-2">Aucun motif précisé.</p>
+                )}
+                <p className="text-sm text-red-600 mt-3">Pour toute question, contactez notre service client.</p>
+              </div>
+            </div>
+          )}
+  
+          {dossier.status === 'SIGNE' && (
+            <div className="mb-6 p-5 bg-slate-800 text-white rounded-xl flex items-start gap-3">
+              <div className="text-2xl">🎉</div>
+              <div>
+                <p className="font-bold text-lg">Contrat finalisé</p>
+                <p className="text-slate-300 mt-1">Votre dossier est complet. Votre véhicule vous attend.</p>
+              </div>
+            </div>
+          )}
+  
+          {/* TIMELINE */}
+          <div className="bg-white rounded-2xl shadow-sm border p-6 mb-6">
+            <h2 className="font-bold text-slate-900 mb-6">Avancement</h2>
+            <div className="relative">
+              {timelineSteps.map((step, idx) => {
+                const done = idx <= activeIndex && !isRefused;
+                const current = idx === activeIndex && !isRefused;
+  
+                return (
+                  <div key={step.status} className="flex gap-4 mb-6 last:mb-0 relative">
+                    {idx !== timelineSteps.length - 1 && (
+                      <div className={`absolute left-5 top-10 w-0.5 h-full ${done ? 'bg-green-500' : 'bg-gray-200'}`}></div>
+                    )}
+                    
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 z-10 border-2 ${done ? 'bg-green-600 border-green-600 text-white' : 'bg-white border-gray-300 text-gray-400'}`}>
+                      {done ? '✓' : idx + 1}
+                    </div>
+  
+                    <div className={`pb-6 flex-1 ${current ? 'bg-green-50 rounded-lg p-3 -m-3 border border-green-200' : ''}`}>
+                      <p className="font-bold text-slate-900">{step.label}</p>
+                      <p className="text-sm text-gray-600">{step.desc}</p>
+                      {current && <p className="text-xs text-green-700 font-semibold mt-1">Statut actuel</p>}
+                    </div>
+                  </div>
+                );
+              })}
+  
+              {isRefused && (
+                <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-600 rounded-xl">
+                  <p className="font-bold text-red-800">Dossier refusé</p>
+                  <p className="text-sm text-red-700 mt-1">Motif : {dossier.adminComment || 'Non précisé'}</p>
+                </div>
               )}
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Suivi du dossier</h1>
-              <p className="text-gray-600">{dossier.vehicle.brand} {dossier.vehicle.model} • {dossier.type === "ACHAT" ? "Achat" : "Location"}</p>
-            </div>
           </div>
-        </div>
-
-        {/* Timeline */}
-        <div className="bg-white rounded-2xl shadow-sm border p-6 mb-6">
-          <h2 className="font-bold text-slate-900 mb-6">Avancement</h2>
-          <div className="relative">
-            {timelineSteps.map((step, idx) => {
-              const done = idx <= activeIndex && !isRefused;
-              const current = idx === activeIndex && !isRefused;
-
-              return (
-                <div key={step.status} className="flex gap-4 mb-6 last:mb-0 relative">
-                  {/* Ligne verticale de connexion */}
-                  {idx !== timelineSteps.length - 1 && (
-                    <div className={`absolute left-5 top-10 w-0.5 h-full ${done ? 'bg-green-500' : 'bg-gray-200'}`}></div>
-                  )}
-
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 z-10 border-2 ${done ? 'bg-green-600 border-green-600 text-white' : 'bg-white border-gray-300 text-gray-400'}`}>
-                    {done ? "✓" : idx + 1}
+  
+          {/* DOCUMENTS TRANSMIS */}
+          {dossier.documents && dossier.documents.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border p-6">
+              <h2 className="font-bold text-slate-900 mb-4">Documents transmis</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {dossier.documents.map((doc) => (
+                  <div key={doc.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border">
+                    <div className="text-2xl">📄</div>
+                    <div className="overflow-hidden">
+                      <p className="text-sm font-medium text-slate-900 truncate">{doc.originalName}</p>
+                      <p className="text-xs text-gray-500 uppercase">{doc.mimeType}</p>
+                    </div>
                   </div>
-
-                  <div className={`pb-6 flex-1 ${current ? 'bg-green-50 rounded-lg p-3 -m-3 border border-green-200' : ''}`}>
-                    <p className="font-bold text-slate-900">{step.label}</p>
-                    <p className="text-sm text-gray-600">{step.desc}</p>
-                    {current && <p className="text-xs text-green-700 font-semibold mt-1">Statut actuel</p>}
-                  </div>
-                </div>
-              );
-            })}
-
-            {isRefused && (
-              <div className="mt-4 p-4 bg-red-50 border-l-4 border-red-600 rounded-xl">
-                <p className="font-bold text-red-800">Dossier refusé</p>
-                <p className="text-sm text-red-700 mt-1">Motif : {dossier.adminComment || "Non précisé"}</p>
+                ))}
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Documents */}
-        {dossier.documents && dossier.documents.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border p-6">
-            <h2 className="font-bold text-slate-900 mb-4">Documents transmis</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {dossier.documents.map((doc) => (
-                <div key={doc.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border">
-                  <div className="text-2xl">📄</div>
-                  <div className="overflow-hidden">
-                    <p className="text-sm font-medium text-slate-900 truncate">{doc.originalName}</p>
-                    <p className="text-xs text-gray-500 uppercase">{doc.mimeType}</p>
-                  </div>
-                </div>
-              ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  
 }

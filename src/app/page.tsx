@@ -8,42 +8,115 @@ import { Vehicle, VehicleType } from '@/types';
 export default function HomePage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState<VehicleType | 'ALL'>('ALL');
 
-  // État du formulaire de recherche
-  const [filters, setFilters] = useState({
-    brand: '',
-    model: '',
-    minPrice: '',
-    maxPrice: '',
-    maxMileage: '',
-  });
+  // États séparés pour chaque filtre (plus robuste)
+  const [filterType, setFilterType] = useState<VehicleType | 'ALL'>('ALL');
+  const [brand, setBrand] = useState('');
+  const [model, setModel] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [maxMileage, setMaxMileage] = useState('');
   const [searchError, setSearchError] = useState('');
 
-  useEffect(() => {
+  // Compteurs pour savoir si des filtres sont actifs
+  const hasTextFilters = brand || model || minPrice || maxPrice || maxMileage;
+  const hasActiveFilters = filterType !== 'ALL' || hasTextFilters;
+
+  // Fonction de recherche explicite
+  async function executeSearch(custom?: {
+    filterType?: VehicleType | 'ALL';
+    brand?: string;
+    model?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    maxMileage?: string;
+  }) {
     setLoading(true);
     setSearchError('');
 
-    const params: Record<string, string> = {};
-    if (filterType !== 'ALL') params.type = filterType;
-    if (filters.brand.trim()) params.brand = filters.brand.trim();
-    if (filters.model.trim()) params.model = filters.model.trim();
-    if (filters.minPrice) params.minPrice = filters.minPrice;
-    if (filters.maxPrice) params.maxPrice = filters.maxPrice;
-    if (filters.maxMileage) params.maxMileage = filters.maxMileage;
+    // On utilise les valeurs passées, sinon les states actuels
+    const activeType = custom?.filterType ?? filterType;
+    const activeBrand = custom?.brand ?? brand;
+    const activeModel = custom?.model ?? model;
+    const activeMinPrice = custom?.minPrice ?? minPrice;
+    const activeMaxPrice = custom?.maxPrice ?? maxPrice;
+    const activeMaxMileage = custom?.maxMileage ?? maxMileage;
 
-    // Validation côté client
+    const params: Record<string, string> = {};
+    if (activeType !== 'ALL') params.type = activeType;
+    if (activeBrand.trim()) params.brand = activeBrand.trim();
+    if (activeModel.trim()) params.model = activeModel.trim();
+    if (activeMinPrice) params.minPrice = activeMinPrice;
+    if (activeMaxPrice) params.maxPrice = activeMaxPrice;
+    if (activeMaxMileage) params.maxMileage = activeMaxMileage;
+
+    // Validation fourchettes
     if (params.minPrice && params.maxPrice && Number(params.minPrice) > Number(params.maxPrice)) {
       setSearchError('Le prix minimum ne peut pas être supérieur au prix maximum.');
       setLoading(false);
       return;
     }
+    if (params.minPrice && Number(params.minPrice) < 0) {
+      setSearchError('Le prix minimum ne peut pas être négatif.');
+      setLoading(false);
+      return;
+    }
+    if (params.maxPrice && Number(params.maxPrice) < 0) {
+      setSearchError('Le prix maximum ne peut pas être négatif.');
+      setLoading(false);
+      return;
+    }
+    if (params.maxMileage && Number(params.maxMileage) < 0) {
+      setSearchError('Le kilométrage ne peut pas être négatif.');
+      setLoading(false);
+      return;
+    }
 
-    api.getVehicles(Object.keys(params).length ? params : undefined)
-      .then((res: Vehicle[]) => setVehicles(res))
-      .catch(() => setVehicles([]))
-      .finally(() => setLoading(false));
-  }, [filterType, filters]);
+    try {
+      const res = await api.getVehicles(Object.keys(params).length ? params : undefined);
+      setVehicles(res as Vehicle[]);
+    } catch (err) {
+      console.error(err);
+      setVehicles([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Chargement initial uniquement
+  useEffect(() => {
+    executeSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Re-cherche quand on change de TYPE (achat/location)
+  useEffect(() => {
+    executeSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterType]);
+
+  function handleReset() {
+    // 1. Vider les states visuels
+    setBrand('');
+    setModel('');
+    setMinPrice('');
+    setMaxPrice('');
+    setMaxMileage('');
+    setFilterType('ALL');
+    setSearchError('');
+
+    // 2. Lancer la recherche IMMÉDIATEMENT avec les valeurs vides
+    //    (sans attendre le batching React des setState)
+    executeSearch({
+      filterType: 'ALL',
+      brand: '',
+      model: '',
+      minPrice: '',
+      maxPrice: '',
+      maxMileage: '',
+    });
+  }
+
 
   const typeButtons: { key: VehicleType | 'ALL'; label: string }[] = [
     { key: 'ALL', label: 'Tous' },
@@ -51,16 +124,6 @@ export default function HomePage() {
     { key: 'LOCATION', label: 'Location' },
     { key: 'LES_DEUX', label: 'Achat / Location' },
   ];
-
-  function handleReset() {
-    setFilters({ brand: '', model: '', minPrice: '', maxPrice: '', maxMileage: '' });
-    setFilterType('ALL');
-    setSearchError('');
-  }
-
-  const hasActiveFilters = filterType !== 'ALL' ||
-    filters.brand || filters.model || filters.minPrice ||
-    filters.maxPrice || filters.maxMileage;
 
   const getImage = (v: Vehicle) => {
     if (v.imageUrls && v.imageUrls.length > 0) {
@@ -96,54 +159,60 @@ export default function HomePage() {
         
         {/* PANNEAU DE RECHERCHE */}
         <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6">
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Recherche avancée</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Filtres de recherche</h2>
             {hasActiveFilters && (
               <button
                 onClick={handleReset}
-                className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 transition"
+                className="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition font-medium"
               >
-                ✕ Réinitialiser
+                ↺ Réinitialiser
               </button>
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
             <input
               type="text"
               placeholder="Marque (ex: Renault)"
-              value={filters.brand}
-              onChange={(e) => setFilters({ ...filters, brand: e.target.value })}
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="text"
               placeholder="Modèle (ex: Clio)"
-              value={filters.model}
-              onChange={(e) => setFilters({ ...filters, model: e.target.value })}
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="number"
               placeholder="Prix min (€)"
-              value={filters.minPrice}
-              onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="number"
               placeholder="Prix max (€)"
-              value={filters.maxPrice}
-              onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="number"
               placeholder="Km max"
-              value={filters.maxMileage}
-              onChange={(e) => setFilters({ ...filters, maxMileage: e.target.value })}
+              value={maxMileage}
+              onChange={(e) => setMaxMileage(e.target.value)}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <button
+              onClick={executeSearch}
+              className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition"
+            >
+              🔍 Rechercher
+            </button>
           </div>
 
           {searchError && (
@@ -153,7 +222,7 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* FILTRES TYPE */}
+        {/* FILTRES TYPE (achat/location) */}
         <div className="flex flex-wrap gap-3 mb-8 justify-center sm:justify-start">
           {typeButtons.map((f) => (
             <button
@@ -177,7 +246,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* GRILLE */}
+        {/* RÉSULTATS */}
         {!loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {vehicles.map((v) => (
@@ -245,12 +314,8 @@ export default function HomePage() {
         {!loading && vehicles.length === 0 && (
           <div className="text-center py-20">
             <div className="text-5xl mb-4">🔍</div>
-            <p className="text-gray-900 text-lg font-semibold mb-2">
-              Aucun résultat ne correspond à vos critères
-            </p>
-            <p className="text-gray-500 mb-6">
-              Essayez d'élargir votre recherche ou de modifier les filtres.
-            </p>
+            <p className="text-gray-900 text-lg font-semibold mb-2">Aucun résultat ne correspond à vos critères</p>
+            <p className="text-gray-500 mb-6">Essayez d'élargir votre recherche ou de modifier les filtres.</p>
             {hasActiveFilters && (
               <button
                 onClick={handleReset}

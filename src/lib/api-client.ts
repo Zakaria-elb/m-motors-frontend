@@ -72,7 +72,10 @@ class ApiClient {
     form.append('dossierId', dossierId);
     return this.fetch('/documents', { method: 'POST', body: form, headers: {} });
   }
-
+  deleteDossier(id: string) {
+    return this.fetch(`/dossiers/${id}`, { method: 'DELETE' });
+  }
+  
   getAllDossiers(params?: Record<string, string>) {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return this.fetch(`/admin/dossiers${qs}`);
@@ -80,6 +83,26 @@ class ApiClient {
   validateDossier(id: string, status: DossierStatus, comment?: string) {
     return this.fetch(`/admin/dossiers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, comment }) });
   }
+    // RENDEZ-VOUS (essai véhicule)
+    createAppointment(data: { vehicleId: string; dateTime: string }) {
+      return this.fetch('/appointments', { method: 'POST', body: JSON.stringify(data) });
+    }
+  
+    getMyAppointments() {
+      return this.fetch('/appointments/mine');
+    }
+  
+    getAdminAppointments() {
+      return this.fetch('/appointments/admin');
+    }
+  
+    updateAppointmentStatus(id: string, status: string, comment?: string) {
+      return this.fetch(`/appointments/admin/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, comment }),
+      });
+    }
+  
 }
 
 export const api = new ApiClient();

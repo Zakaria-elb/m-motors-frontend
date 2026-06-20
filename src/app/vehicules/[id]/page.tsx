@@ -12,6 +12,25 @@ export default function VehicleDetailPage() {
   const router = useRouter();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [loading, setLoading] = useState(true);
+  const [appointmentDate, setAppointmentDate] = useState('');
+  const [appointmentTime, setAppointmentTime] = useState('');
+  const [appointmentMsg, setAppointmentMsg] = useState('');
+
+  async function handleBookTestDrive() {
+    if (!appointmentDate || !appointmentTime) {
+      setAppointmentMsg('❌ Veuillez choisir une date et une heure.');
+      return;
+    }
+    const dateTime = `${appointmentDate}T${appointmentTime}:00`;
+    try {
+      await api.createAppointment({ vehicleId: id as string, dateTime });
+      setAppointmentMsg('✅ Votre demande d\'essai a été envoyée ! Notre équipe vous confirmera le créneau.');
+      setAppointmentDate('');
+      setAppointmentTime('');
+    } catch (err: any) {
+      setAppointmentMsg(err.message || '❌ Erreur lors de la réservation.');
+    }
+  }
 
   useEffect(() => {
     if (!id) return;
@@ -171,6 +190,40 @@ export default function VehicleDetailPage() {
           </div>
         </div>
       </div>
+        {/* RÉSERVATION ESSAI */}
+        <div className="mt-8 bg-white rounded-2xl shadow-sm border p-6">
+          <h3 className="text-lg font-bold text-slate-900 mb-2">🚗 Réserver un essai</h3>
+          <p className="text-sm text-gray-600 mb-4">Choisissez un créneau pour tester ce véhicule avant de décider.</p>
+          
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <input
+              type="date"
+              value={appointmentDate}
+              onChange={(e) => setAppointmentDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              className="border rounded-lg px-3 py-2 text-sm"
+            />
+            <input
+              type="time"
+              value={appointmentTime}
+              onChange={(e) => setAppointmentTime(e.target.value)}
+              className="border rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
+          
+          <button
+            onClick={handleBookTestDrive}
+            className="w-full bg-orange-600 text-white py-2.5 rounded-lg font-semibold hover:bg-orange-700 transition"
+          >
+            Demander un essai
+          </button>
+          
+          {appointmentMsg && (
+            <p className={`mt-3 text-sm font-medium ${appointmentMsg.startsWith('✅') ? 'text-green-700' : 'text-red-600'}`}>
+              {appointmentMsg}
+            </p>
+          )}
+        </div>
 
       {/* Section confiance */}
       <div className="max-w-6xl mx-auto px-4 py-12">
