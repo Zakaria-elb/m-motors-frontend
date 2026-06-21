@@ -19,13 +19,20 @@ export function Navbar() {
     <nav className="bg-slate-900 text-white sticky top-0 z-50 shadow-lg border-b border-slate-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            
-            <span className="text-2xl">🚗</span>
-            <Link href="/" className="text-xl font-bold tracking-tight hover:text-blue-300 transition">
-              M-Motors
-            </Link>
-          </div>
+       <div className="flex items-center gap-2 bg-white/10 px-5 py-2 rounded-full backdrop-blur-sm">
+
+  <img
+    src="/logo.jpg"
+    alt="M-Motors"
+    className="h-8 w-auto object-contain rounded-lg"
+  />
+  <Link
+    href="/"
+    className="text-xl font-bold tracking-tight text-white hover:text-blue-300 transition"
+  >
+    M-Motors
+  </Link>
+</div>
 
           <div className="hidden md:flex items-center gap-1">
             <Link href="/" className={linkClass('/')}>Véhicules</Link>
@@ -35,9 +42,9 @@ export function Navbar() {
                 {user.role === 'ADMIN' && (
                   <Link href="/admin" className={linkClass('/admin')}>Admin</Link>
                 )}
-                <Link href="/espace-client" className={linkClass('/espace-client')}>
-                  Mon Espace
-                </Link>
+                {user.role !== 'ADMIN' && (
+              <Link href="/espace-client" className={linkClass('/espace-client')}> Mon Espace </Link>  )}
+
                 <div className="ml-4 flex items-center gap-3 border-l border-slate-700 pl-4">
                   <span className="text-xs text-gray-400">{user.firstName}</span>
                   <button

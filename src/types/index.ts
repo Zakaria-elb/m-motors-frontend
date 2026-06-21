@@ -18,14 +18,17 @@ export interface Vehicle {
   model: string;
   year: number;
   mileage: number;
-  price?: number;
-  monthlyPrice?: number;
+  price: number | null;
+  monthlyPrice: number | null;
   status: VehicleStatus;
-  type: VehicleType;
-  description: string;
-  imageUrls: string[];
-  options: Record<string, boolean>;
+  type: VehicleType;   // ← important
+  description?: string;
+  imageUrls?: string[];
+  options?: Record<string, boolean>;
+  createdAt: string;
+  updatedAt: string;
 }
+
 
 export interface DocumentFile {
   id: string;

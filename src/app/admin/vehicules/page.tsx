@@ -38,32 +38,57 @@ export default function AdminVehiculesPage() {
   }
 
   async function basculer(v: Vehicle) {
-    const nextStatus: VehicleStatus =
-      v.status === 'EN_LOCATION' ? 'A_VENDRE' :
-      v.status === 'A_VENDRE' ? 'EN_LOCATION' :
-      'LES_DEUX';
-
+    // Menu de choix du nouveau statut
+    const choix = prompt(
+      `Basculement de ${v.brand} ${v.model}\n\n` +
+      `Choisissez le nouveau statut :\n` +
+      `1 - Vente seule (A_VENDRE)\n` +
+      `2 - Location seule (EN_LOCATION)\n` +
+      `3 - Les deux (LES_DEUX)\n\n` +
+      `Tapez 1, 2 ou 3 :`
+    );
+  
+    if (!choix || !['1', '2', '3'].includes(choix)) {
+      return alert('Basculement annulé.');
+    }
+  
+    const nextStatusMap: Record<string, VehicleStatus> = {
+      '1': 'A_VENDRE',
+      '2': 'EN_LOCATION',
+      '3': 'LES_DEUX',
+    };
+  
+    const nextStatus = nextStatusMap[choix];
     const extra: { price?: number; monthlyPrice?: number } = {};
-
+  
+    // Si on va vers VENTE ou LES_DEUX, il faut un prix d'achat
     if ((nextStatus === 'A_VENDRE' || nextStatus === 'LES_DEUX') && (!v.price || v.price === 0)) {
-      const priceStr = prompt(`💰 Basculement vers ${nextStatus.replace('_', ' ')}\n\nCe véhicule n'a pas de prix d'achat.\nVeuillez le renseigner (€) :`);
+      const priceStr = prompt(
+        `Basculement vers ${nextStatus === 'A_VENDRE' ? 'Vente seule' : 'Les deux'}\n\n` +
+        `Ce véhicule n'a pas de prix d'achat.\nVeuillez le renseigner (€) :`
+      );
       if (!priceStr || isNaN(Number(priceStr)) || Number(priceStr) <= 0) {
-        return alert("Basculement annulé : prix invalide.");
+        return alert('Basculement annulé : prix d\'achat invalide.');
       }
       extra.price = Number(priceStr);
     }
-
+  
+    // Si on va vers LOCATION ou LES_DEUX, il faut un loyer mensuel
     if ((nextStatus === 'EN_LOCATION' || nextStatus === 'LES_DEUX') && (!v.monthlyPrice || v.monthlyPrice === 0)) {
-      const monthlyStr = prompt(`🔄 Basculement vers ${nextStatus.replace('_', ' ')}\n\nCe véhicule n'a pas de loyer mensuel.\nVeuillez le renseigner (€/mois) :`);
+      const monthlyStr = prompt(
+        `Basculement vers ${nextStatus === 'EN_LOCATION' ? 'Location seule' : 'Les deux'}\n\n` +
+        `Ce véhicule n'a pas de loyer mensuel.\nVeuillez le renseigner (€/mois) :`
+      );
       if (!monthlyStr || isNaN(Number(monthlyStr)) || Number(monthlyStr) <= 0) {
-        return alert("Basculement annulé : loyer invalide.");
+        return alert('Basculement annulé : loyer mensuel invalide.');
       }
       extra.monthlyPrice = Number(monthlyStr);
     }
-
+  
     await api.basculerVehicle(v.id, nextStatus, extra);
     loadVehicles();
   }
+  
 
   async function supprimer(id: string) {
     if (!confirm('Confirmer la suppression ?')) return;

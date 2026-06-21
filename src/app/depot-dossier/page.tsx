@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
 import { DossierType } from "@/types";
 import Link from "next/link";
+import { useAuth } from '@/providers/auth-provider';
+
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 Mo
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
@@ -18,7 +20,7 @@ const REQUIRED_DOCS = [
 
 export default function DepotDossierPage() {
   const router = useRouter();
-
+  const { user, loading } = useAuth();
   const [vehicleId, setVehicleId] = useState<string | null>(null);
   const [type, setType] = useState<DossierType>("ACHAT");
 
@@ -114,16 +116,35 @@ export default function DepotDossierPage() {
       setUploading(false);
     }
   }
+  
+ 
+
+if (loading) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+    </div>
+  );
+}
+
+if (user?.role === 'ADMIN') {
+  router.replace('/');
+  return null;
+}
 
   const filledCount = Object.values(files).filter(Boolean).length;
   const requiredCount = REQUIRED_DOCS.filter(d => !d.optional).length;
   const allValid = filledCount >= requiredCount && Object.values(fileErrors).every(e => !e);
-
+   
   return (
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <Link href="/" className="text-sm text-blue-600 hover:underline mb-3 inline-block">← Retour au catalogue</Link>
+        <Link
+             href={vehicleId ? `/vehicules/${vehicleId}` : '/'} className="text-sm text-blue-600 hover:underline mb-3 inline-block">
+        ← Retour à la fiche du véhicule
+        </Link>
+
           <h1 className="text-2xl font-bold text-slate-900">Dépôt du dossier de {type === "ACHAT" ? "d'achat" : "de location"}</h1>
           <p className="text-gray-600 mt-1">Complétez les champs ci-dessous pour finaliser votre demande.</p>
         </div>

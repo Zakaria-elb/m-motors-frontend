@@ -8,122 +8,79 @@ import { Vehicle, VehicleType } from '@/types';
 export default function HomePage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // États séparés pour chaque filtre (plus robuste)
   const [filterType, setFilterType] = useState<VehicleType | 'ALL'>('ALL');
-  const [brand, setBrand] = useState('');
-  const [model, setModel] = useState('');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-  const [maxMileage, setMaxMileage] = useState('');
+
+  const [filters, setFilters] = useState({
+    brand: '',
+    model: '',
+    minPrice: '',
+    maxPrice: '',
+    maxMileage: '',
+  });
+
   const [searchError, setSearchError] = useState('');
 
-  // Compteurs pour savoir si des filtres sont actifs
-  const hasTextFilters = brand || model || minPrice || maxPrice || maxMileage;
-  const hasActiveFilters = filterType !== 'ALL' || hasTextFilters;
-
-  // Fonction de recherche explicite
-  async function executeSearch(custom?: {
-    filterType?: VehicleType | 'ALL';
-    brand?: string;
-    model?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    maxMileage?: string;
-  }) {
+  // Fonction de recherche principale
+  const executeSearch = async () => {
     setLoading(true);
     setSearchError('');
 
-    // On utilise les valeurs passées, sinon les states actuels
-    const activeType = custom?.filterType ?? filterType;
-    const activeBrand = custom?.brand ?? brand;
-    const activeModel = custom?.model ?? model;
-    const activeMinPrice = custom?.minPrice ?? minPrice;
-    const activeMaxPrice = custom?.maxPrice ?? maxPrice;
-    const activeMaxMileage = custom?.maxMileage ?? maxMileage;
-
     const params: Record<string, string> = {};
-    if (activeType !== 'ALL') params.type = activeType;
-    if (activeBrand.trim()) params.brand = activeBrand.trim();
-    if (activeModel.trim()) params.model = activeModel.trim();
-    if (activeMinPrice) params.minPrice = activeMinPrice;
-    if (activeMaxPrice) params.maxPrice = activeMaxPrice;
-    if (activeMaxMileage) params.maxMileage = activeMaxMileage;
 
-    // Validation fourchettes
+    if (filterType !== 'ALL') params.type = filterType;
+    if (filters.brand.trim()) params.brand = filters.brand.trim();
+    if (filters.model.trim()) params.model = filters.model.trim();
+    if (filters.minPrice) params.minPrice = filters.minPrice;
+    if (filters.maxPrice) params.maxPrice = filters.maxPrice;
+    if (filters.maxMileage) params.maxMileage = filters.maxMileage;
+
+    // Validation fourchette prix
     if (params.minPrice && params.maxPrice && Number(params.minPrice) > Number(params.maxPrice)) {
       setSearchError('Le prix minimum ne peut pas être supérieur au prix maximum.');
-      setLoading(false);
-      return;
-    }
-    if (params.minPrice && Number(params.minPrice) < 0) {
-      setSearchError('Le prix minimum ne peut pas être négatif.');
-      setLoading(false);
-      return;
-    }
-    if (params.maxPrice && Number(params.maxPrice) < 0) {
-      setSearchError('Le prix maximum ne peut pas être négatif.');
-      setLoading(false);
-      return;
-    }
-    if (params.maxMileage && Number(params.maxMileage) < 0) {
-      setSearchError('Le kilométrage ne peut pas être négatif.');
+      setVehicles([]);
       setLoading(false);
       return;
     }
 
     try {
-      const res = await api.getVehicles(Object.keys(params).length ? params : undefined);
-      setVehicles(res as Vehicle[]);
-    } catch (err) {
-      console.error(err);
+      const result = await api.getVehicles(Object.keys(params).length ? params : undefined);
+      setVehicles(result || []);
+    } catch (err: any) {
+      console.error('Erreur recherche véhicules:', err);
       setVehicles([]);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  // Chargement initial uniquement
+  // Recherche automatique quand filtres/type changent
   useEffect(() => {
-    executeSearch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const timeout = setTimeout(() => {
+      executeSearch();
+    }, 300); // petit debounce pour éviter trop d'appels
+    return () => clearTimeout(timeout);
+  }, [filterType, filters]);
 
-  // Re-cherche quand on change de TYPE (achat/location)
-  useEffect(() => {
-    executeSearch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterType]);
+  const typeButtons = [
+    { key: 'ALL' as const, label: 'Tous' },
+    { key: 'ACHAT' as VehicleType, label: 'Achat' },
+    { key: 'LOCATION' as VehicleType, label: 'Location' },
+    { key: 'LES_DEUX' as VehicleType, label: 'Achat / Location' },
+  ];
 
   function handleReset() {
-    // 1. Vider les states visuels
-    setBrand('');
-    setModel('');
-    setMinPrice('');
-    setMaxPrice('');
-    setMaxMileage('');
+    setFilters({ brand: '', model: '', minPrice: '', maxPrice: '', maxMileage: '' });
     setFilterType('ALL');
     setSearchError('');
-
-    // 2. Lancer la recherche IMMÉDIATEMENT avec les valeurs vides
-    //    (sans attendre le batching React des setState)
-    executeSearch({
-      filterType: 'ALL',
-      brand: '',
-      model: '',
-      minPrice: '',
-      maxPrice: '',
-      maxMileage: '',
-    });
   }
 
-
-  const typeButtons: { key: VehicleType | 'ALL'; label: string }[] = [
-    { key: 'ALL', label: 'Tous' },
-    { key: 'ACHAT', label: 'Achat' },
-    { key: 'LOCATION', label: 'Location' },
-    { key: 'LES_DEUX', label: 'Achat / Location' },
-  ];
+  const hasActiveFilters =
+    filterType !== 'ALL' ||
+    filters.brand ||
+    filters.model ||
+    filters.minPrice ||
+    filters.maxPrice ||
+    filters.maxMileage;
 
   const getImage = (v: Vehicle) => {
     if (v.imageUrls && v.imageUrls.length > 0) {
@@ -156,65 +113,56 @@ export default function HomePage() {
 
       {/* CONTENU */}
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        
         {/* PANNEAU DE RECHERCHE */}
         <div className="bg-white rounded-2xl shadow-sm border p-5 mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Filtres de recherche</h2>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">Recherche avancée</h2>
             {hasActiveFilters && (
               <button
                 onClick={handleReset}
-                className="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition font-medium"
+                className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200 transition"
               >
-                ↺ Réinitialiser
+                ✕ Réinitialiser
               </button>
             )}
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <input
               type="text"
               placeholder="Marque (ex: Renault)"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
+              value={filters.brand}
+              onChange={(e) => setFilters({ ...filters, brand: e.target.value })}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="text"
               placeholder="Modèle (ex: Clio)"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
+              value={filters.model}
+              onChange={(e) => setFilters({ ...filters, model: e.target.value })}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="number"
               placeholder="Prix min (€)"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
+              value={filters.minPrice}
+              onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="number"
               placeholder="Prix max (€)"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
+              value={filters.maxPrice}
+              onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <input
               type="number"
               placeholder="Km max"
-              value={maxMileage}
-              onChange={(e) => setMaxMileage(e.target.value)}
+              value={filters.maxMileage}
+              onChange={(e) => setFilters({ ...filters, maxMileage: e.target.value })}
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <button
-              onClick={executeSearch}
-              className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition"
-            >
-              🔍 Rechercher
-            </button>
           </div>
-
           {searchError && (
             <div className="mt-3 p-3 bg-red-50 border-l-4 border-red-500 rounded text-sm text-red-700">
               {searchError}
@@ -222,7 +170,7 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* FILTRES TYPE (achat/location) */}
+        {/* FILTRES TYPE */}
         <div className="flex flex-wrap gap-3 mb-8 justify-center sm:justify-start">
           {typeButtons.map((f) => (
             <button
@@ -246,7 +194,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* RÉSULTATS */}
+        {/* GRILLE */}
         {!loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {vehicles.map((v) => (
@@ -261,16 +209,19 @@ export default function HomePage() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute top-3 right-3">
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-sm ${
-                      v.type === 'ACHAT' ? 'bg-blue-100 text-blue-800' :
-                      v.type === 'LOCATION' ? 'bg-green-100 text-green-800' :
-                      'bg-purple-100 text-purple-800'
-                    }`}>
+                    <span
+                      className={`text-xs font-bold px-3 py-1 rounded-full shadow-sm ${
+                        v.type === 'ACHAT'
+                          ? 'bg-blue-100 text-blue-800'
+                          : v.type === 'LOCATION'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-purple-100 text-purple-800'
+                      }`}
+                    >
                       {v.type === 'ACHAT' ? 'ACHAT' : v.type === 'LOCATION' ? 'LOCATION' : 'ACHAT / LOC'}
                     </span>
                   </div>
                 </div>
-
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-2">
                     <div>
@@ -278,23 +229,44 @@ export default function HomePage() {
                       <p className="text-sm text-gray-500">{v.year} • {v.mileage.toLocaleString()} km</p>
                     </div>
                   </div>
-
                   <p className="text-sm text-gray-600 line-clamp-2 mb-4 flex-1">
                     {v.description || 'Véhicule proposé par M-Motors avec garantie et révision complète.'}
                   </p>
-
                   <div className="mb-4">
-                    {v.price && v.type !== 'LOCATION' && (
+                    {/* Achat uniquement : prix d'achat en grand */}
+                    {v.type === 'ACHAT' && v.price && (
                       <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-bold text-slate-900">{Number(v.price).toLocaleString()} €</span>
+                        <span className="text-2xl font-bold text-slate-900">
+                          {Number(v.price).toLocaleString()} €
+                        </span>
                       </div>
                     )}
-                    {v.monthlyPrice && v.type !== 'ACHAT' && (
-                      <div className={`text-sm font-semibold ${v.price ? 'text-gray-500' : 'text-xl text-green-700'}`}>
-                        {v.price ? 'ou ' : ''}
-                        <span className={v.price ? '' : 'text-xl'}>{Number(v.monthlyPrice).toLocaleString()} €/mois</span>
-                        {v.price && <span className="font-normal text-gray-400"> en LLD</span>}
+
+                    {/* Location uniquement : loyer en grand */}
+                    {v.type === 'LOCATION' && v.monthlyPrice && (
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold text-slate-900">
+                          {Number(v.monthlyPrice).toLocaleString()} €/mois
+                        </span>
                       </div>
+                    )}
+
+                    {/* Les deux : prix d'achat + loyer */}
+                    {v.type === 'LES_DEUX' && (
+                      <>
+                        {v.price && (
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-bold text-slate-900">
+                              {Number(v.price).toLocaleString()} €
+                            </span>
+                          </div>
+                        )}
+                        {v.monthlyPrice && (
+                          <div className="text-sm font-semibold text-gray-500">
+                            ou {Number(v.monthlyPrice).toLocaleString()} €/mois en LLD
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
 
@@ -313,9 +285,13 @@ export default function HomePage() {
         {/* AUCUN RÉSULTAT */}
         {!loading && vehicles.length === 0 && (
           <div className="text-center py-20">
-            <div className="text-5xl mb-4">🔍</div>
-            <p className="text-gray-900 text-lg font-semibold mb-2">Aucun résultat ne correspond à vos critères</p>
-            <p className="text-gray-500 mb-6">Essayez d'élargir votre recherche ou de modifier les filtres.</p>
+            <div className="text-5xl mb-4">🤷</div>
+            <p className="text-gray-900 text-lg font-semibold mb-2">
+              Aucun résultat ne correspond à vos critères
+            </p>
+            <p className="text-gray-500 mb-6">
+              Essayez d'élargir votre recherche ou de modifier les filtres.
+            </p>
             {hasActiveFilters && (
               <button
                 onClick={handleReset}

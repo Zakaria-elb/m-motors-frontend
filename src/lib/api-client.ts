@@ -38,6 +38,7 @@ class ApiClient {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return this.fetch(`/vehicles${qs}`);
   }
+  
   getVehicle(id: string) { return this.fetch(`/vehicles/${id}`); }
   createVehicle(data: Partial<Vehicle>) {
     return this.fetch('/vehicles', { method: 'POST', body: JSON.stringify(data) });
@@ -53,12 +54,17 @@ class ApiClient {
     });
   }
   
-  basculerVehicle(id: string, status: VehicleStatus, extra?: { price?: number; monthlyPrice?: number }) {
+  basculerVehicle(
+    id: string,
+    status: VehicleStatus,
+    extra?: { price?: number; monthlyPrice?: number }
+  ) {
     return this.fetch(`/vehicles/${id}/bascule`, {
       method: 'PATCH',
-      body: JSON.stringify({ status, ...extra })
+      body: JSON.stringify({ status, ...extra }),
     });
   }
+  
   
   createDossier(data: { vehicleId: string | null; type: DossierType }) {
     return this.fetch('/dossiers', { method: 'POST', body: JSON.stringify(data) });
