@@ -9,11 +9,10 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/uploads/:path*',
-        destination: 'http://localhost:3001/uploads/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/uploads/:path*`,
       },
     ];
   },
 };
 
 export default nextConfig;
-
