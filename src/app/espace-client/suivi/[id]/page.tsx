@@ -66,7 +66,7 @@ useEffect(() => {
             </div>
           </div>
   
-          {/* 🔔 BANDEAU NOTIFICATION DÉCISION ADMIN */}
+          {/*  DÉCISION ADMIN */}
           {dossier.status === 'VALIDE' && (
             <div className="mb-6 p-5 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
               <div className="text-2xl">✅</div>

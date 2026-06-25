@@ -73,7 +73,8 @@ export default function AdminVehiculesPage() {
       extra.price = Number(priceStr);
     }
   
-    // Si on va vers LOCATION ou LES_DEUX, il faut un loyer mensuel
+    // ajout un loyer mensuel au bascule
+    
     if ((nextStatus === 'EN_LOCATION' || nextStatus === 'LES_DEUX') && (!v.monthlyPrice || v.monthlyPrice === 0)) {
       const monthlyStr = prompt(
         `Basculement vers ${nextStatus === 'EN_LOCATION' ? 'Location seule' : 'Les deux'}\n\n` +

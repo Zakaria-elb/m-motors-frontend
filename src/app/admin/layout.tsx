@@ -9,7 +9,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  // Redirection PROTEGÉE dans useEffect (pas pendant le rendu)
+  // Redirection 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'ADMIN')) {
       router.push('/');
@@ -18,7 +18,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading) return <div className="p-10 text-center">Chargement...</div>;
 
-  // Pendant le rendu, on ne fait PAS de router.push()
+  
   if (!user || user.role !== 'ADMIN') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">

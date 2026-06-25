@@ -95,7 +95,7 @@ export default function VehicleDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
-      {/* Header avec image et infos */}
+      {/* image et infos */}
       <div className="bg-white border-b">
         <div className="max-w-6xl mx-auto px-4 py-6">
           <Link href="/" className="text-sm text-blue-600 hover:underline flex items-center gap-1 mb-4">

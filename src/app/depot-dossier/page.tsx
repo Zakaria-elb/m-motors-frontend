@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useAuth } from '@/providers/auth-provider';
 
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 Mo
+const MAX_FILE_SIZE = 20 * 1024 * 1024; 
 const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 
 const REQUIRED_DOCS = [

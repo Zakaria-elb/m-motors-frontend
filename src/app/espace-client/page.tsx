@@ -51,7 +51,7 @@ export default function EspaceClientPage() {
     ]).finally(() => setDataLoading(false));
   }, [authLoading, user, router]);
 
-  // Spinner global
+  //  global
   if (authLoading || dataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">

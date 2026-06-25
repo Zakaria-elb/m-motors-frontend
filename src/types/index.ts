@@ -21,7 +21,7 @@ export interface Vehicle {
   price: number | null;
   monthlyPrice: number | null;
   status: VehicleStatus;
-  type: VehicleType;   // ← important
+  type: VehicleType;  
   description?: string;
   imageUrls?: string[];
   options?: Record<string, boolean>;
@@ -41,7 +41,7 @@ export interface Dossier {
   type: DossierType;
   status: DossierStatus;
   vehicle: Vehicle;
-  user?: { email?: string };  // ← AJOUTER CETTE LIGNE
+  user?: { email?: string }; 
   createdAt: string;
   updatedAt: string;
   documents?: DocumentFile[];

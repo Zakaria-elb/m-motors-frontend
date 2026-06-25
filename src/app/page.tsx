@@ -53,7 +53,7 @@ export default function HomePage() {
     }
   };
 
-  // Recherche automatique quand filtres/type changent
+  // Recherche automatique 
   useEffect(() => {
     const timeout = setTimeout(() => {
       executeSearch();
@@ -233,7 +233,7 @@ export default function HomePage() {
                     {v.description || 'Véhicule proposé par M-Motors avec garantie et révision complète.'}
                   </p>
                   <div className="mb-4">
-                    {/* Achat uniquement : prix d'achat en grand */}
+                  
                     {v.type === 'ACHAT' && v.price && (
                       <div className="flex items-baseline gap-1">
                         <span className="text-2xl font-bold text-slate-900">
@@ -242,7 +242,7 @@ export default function HomePage() {
                       </div>
                     )}
 
-                    {/* Location uniquement : loyer en grand */}
+                    
                     {v.type === 'LOCATION' && v.monthlyPrice && (
                       <div className="flex items-baseline gap-1">
                         <span className="text-2xl font-bold text-slate-900">
@@ -251,7 +251,7 @@ export default function HomePage() {
                       </div>
                     )}
 
-                    {/* Les deux : prix d'achat + loyer */}
+                    
                     {v.type === 'LES_DEUX' && (
                       <>
                         {v.price && (

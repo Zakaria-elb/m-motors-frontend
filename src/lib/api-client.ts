@@ -89,7 +89,7 @@ class ApiClient {
   validateDossier(id: string, status: DossierStatus, comment?: string) {
     return this.fetch(`/admin/dossiers/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, comment }) });
   }
-    // RENDEZ-VOUS (essai véhicule)
+    //ESSAI 
     createAppointment(data: { vehicleId: string; dateTime: string }) {
       return this.fetch('/appointments', { method: 'POST', body: JSON.stringify(data) });
     }
