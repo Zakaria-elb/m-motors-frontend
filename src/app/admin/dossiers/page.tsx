@@ -117,8 +117,8 @@ export default function AdminDossiersPage() {
 </div>
 
 {d.documents && d.documents.length > 0 && (
-  <div className="mt-3 p-3 bg-blue-50 rounded-lg border-2 border-blue-500">
-    <p className="text-sm font-bold text-slate-900 mb-2">
+  <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+    <p className="text-sm font-semibold text-slate-900 mb-2">
       📎 Documents transmis ({d.documents.length})
     </p>
     <div className="flex flex-wrap gap-2">
@@ -128,14 +128,15 @@ export default function AdminDossiersPage() {
           href={`/uploads/documents/${doc.s3Key}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs bg-white text-blue-700 px-3 py-1.5 rounded-full border border-blue-300 hover:bg-blue-100 transition"
+          className="text-xs bg-white text-blue-700 px-3 py-1.5 rounded-full border border-blue-200 hover:bg-blue-100 transition"
         >
-          📄 {doc.originalName}
+          📄 {doc.originalName} ({(doc.sizeBytes / 1024).toFixed(1)} Ko)
         </a>
       ))}
     </div>
   </div>
 )}
+
 
 
 

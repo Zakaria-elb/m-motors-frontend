@@ -93,9 +93,14 @@ export default function AdminVehiculesPage() {
 
   async function supprimer(id: string) {
     if (!confirm('Confirmer la suppression ?')) return;
-    await api.deleteVehicle(id);
-    loadVehicles();
+    try {
+      await api.deleteVehicle(id);
+      loadVehicles();
+    } catch (err: any) {
+      alert(err.message || 'Erreur lors de la suppression');
+    }
   }
+  
 
   return (
     <div>
