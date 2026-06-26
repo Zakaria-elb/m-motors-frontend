@@ -111,10 +111,8 @@ export default function AdminDossiersPage() {
                 Client : <span className="font-medium">{d.user?.email || 'Inconnu'}</span>
                 {' • '}Déposé le {new Date(d.createdAt).toLocaleDateString('fr-FR')}
               </p>
-     {/* DEBUG FORCÉ */}
-<div className="mt-2 p-3 bg-red-600 text-white font-bold rounded">
-  DEBUG: documents = {d.documents ? d.documents.length : 'undefined'}
-</div>
+    
+
 
 {d.documents && d.documents.length > 0 && (
   <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
