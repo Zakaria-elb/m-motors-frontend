@@ -111,14 +111,14 @@ export default function AdminDossiersPage() {
                 Client : <span className="font-medium">{d.user?.email || 'Inconnu'}</span>
                 {' • '}Déposé le {new Date(d.createdAt).toLocaleDateString('fr-FR')}
               </p>
-              <div className="mt-2 p-2 bg-yellow-100 rounded text-xs font-mono">
-            DEBUG: {d.documents ? d.documents.length : 'undefined'} documents
-          </div>
+     {/* DEBUG FORCÉ */}
+<div className="mt-2 p-3 bg-red-600 text-white font-bold rounded">
+  DEBUG: documents = {d.documents ? d.documents.length : 'undefined'}
+</div>
 
-              {/* DOCUMENTS TRANSIS PAR LE CLIENT */}
-              {d.documents && d.documents.length > 0 && (
-  <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-    <p className="text-sm font-semibold text-slate-900 mb-2">
+{d.documents && d.documents.length > 0 && (
+  <div className="mt-3 p-3 bg-blue-50 rounded-lg border-2 border-blue-500">
+    <p className="text-sm font-bold text-slate-900 mb-2">
       📎 Documents transmis ({d.documents.length})
     </p>
     <div className="flex flex-wrap gap-2">
@@ -128,7 +128,7 @@ export default function AdminDossiersPage() {
           href={`/uploads/documents/${doc.s3Key}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs bg-white text-blue-700 px-3 py-1.5 rounded-full border border-blue-200 hover:bg-blue-100 transition"
+          className="text-xs bg-white text-blue-700 px-3 py-1.5 rounded-full border border-blue-300 hover:bg-blue-100 transition"
         >
           📄 {doc.originalName}
         </a>
