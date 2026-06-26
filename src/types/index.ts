@@ -29,7 +29,6 @@ export interface Vehicle {
   updatedAt: string;
 }
 
-
 export interface DocumentFile {
   id: string;
   originalName: string;
@@ -39,14 +38,16 @@ export interface DocumentFile {
   createdAt?: string;
 }
 
+
 export interface Dossier {
   id: string;
+  documents?: DocumentFile[];
   type: DossierType;
   status: DossierStatus;
   vehicle: Vehicle;
   user?: { email?: string }; 
   createdAt: string;
   updatedAt: string;
-  documents?: DocumentFile[];
+
   adminComment?: string;
 }

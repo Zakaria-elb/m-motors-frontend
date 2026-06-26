@@ -1,5 +1,4 @@
 'use client';
-
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
 import { Dossier, DossierStatus } from "@/types";
@@ -74,23 +73,21 @@ export default function AdminDossiersPage() {
       {/* Filtres */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
         {filters.map((f) => (
-                    <button
-                    key={f.key}
-                    onClick={() => setFilter(f.key)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
-                      filter === f.key
-                        ? 'bg-slate-900 text-white shadow-md'
-                        : 'bg-white border hover:bg-gray-50'
-                    }`}
-                  >
-                    {f.label}
-                    {f.key !== 'ALL' && (
-                      <span className="ml-1 text-xs opacity-75">
-                        {dossiers.filter(d => d.status === f.key).length}
-                      </span>
-                    )}
-                  </button>
-        
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition ${
+              filter === f.key
+                ? 'bg-slate-900 text-white shadow-md'
+                : 'bg-white border hover:bg-gray-50'
+            }`}
+          >
+            {f.label} {f.key !== 'ALL' && (
+              <span className="ml-1 text-xs opacity-75">
+                {dossiers.filter(d => d.status === f.key).length}
+              </span>
+            )}
+          </button>
         ))}
       </div>
 
@@ -108,32 +105,35 @@ export default function AdminDossiersPage() {
                   {d.type === 'ACHAT' ? 'Achat' : 'Location LLD'}
                 </span>
               </div>
-              <p className="text-sm text-gray-600">
-              Client : <span className="font-medium">{d.user?.email || 'Inconnu'}</span>
 
+              <p className="text-sm text-gray-600">
+                Client : <span className="font-medium">{d.user?.email || 'Inconnu'}</span>
                 {' • '}Déposé le {new Date(d.createdAt).toLocaleDateString('fr-FR')}
               </p>
-  {d.documents && d.documents.length > 0 && (
-  <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
-    <p className="text-sm font-semibold text-slate-900 mb-2">Documents transmis :</p>
-    <div className="flex flex-wrap gap-2">
-      {d.documents.map((doc) => (
-        <a
-          key={doc.id}
-          href={`/uploads/documents/${doc.s3Key}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-100 transition"
-        >
-          📄 {doc.originalName}
-        </a>
-      ))}
-    </div>
-  </div>
-)}
+
+              {/* DOCUMENTS TRANSIS PAR LE CLIENT */}
+              {d.documents && d.documents.length > 0 && (
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
+                  <p className="text-sm font-semibold text-slate-900 mb-2">Documents transmis :</p>
+                  <div className="flex flex-wrap gap-2">
+                    {d.documents.map((doc) => (
+                      <a
+                        key={doc.id}
+                        href={`/uploads/documents/${doc.s3Key}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-100 transition flex items-center gap-1"
+                      >
+                        📄 {doc.originalName}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {d.adminComment && (
                 <p className="text-sm text-red-600 mt-2 p-2 bg-red-50 rounded border-l-4 border-red-400">
-                  💬 {d.adminComment}
+                  {d.adminComment}
                 </p>
               )}
             </div>
@@ -144,33 +144,36 @@ export default function AdminDossiersPage() {
                   onClick={() => handleValidation(d.id, 'EN_REVISION')}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
                 >
-                  📥 Prendre en charge
+                  🔄 Prendre en charge
                 </button>
               )}
+
               {d.status === 'EN_REVISION' && (
                 <>
                   <button
                     onClick={() => handleValidation(d.id, 'VALIDE')}
                     className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
                   >
-                    ✅ Valider
+                    ✓ Valider
                   </button>
                   <button
                     onClick={() => handleValidation(d.id, 'REFUSE')}
                     className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition"
                   >
-                    ❌ Refuser
+                    ✕ Refuser
                   </button>
                 </>
               )}
+
               {d.status === 'VALIDE' && (
                 <button
                   onClick={() => handleValidation(d.id, 'SIGNE')}
                   className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-700 transition"
                 >
-                  ✍️ Marquer signé
+                  📝 Marquer signé
                 </button>
               )}
+
               {d.status === 'SIGNE' && (
                 <span className="text-xs text-gray-500 py-2">Contrat finalisé</span>
               )}
