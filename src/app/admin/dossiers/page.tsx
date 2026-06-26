@@ -113,6 +113,24 @@ export default function AdminDossiersPage() {
 
                 {' • '}Déposé le {new Date(d.createdAt).toLocaleDateString('fr-FR')}
               </p>
+  {d.documents && d.documents.length > 0 && (
+  <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
+    <p className="text-sm font-semibold text-slate-900 mb-2">Documents transmis :</p>
+    <div className="flex flex-wrap gap-2">
+      {d.documents.map((doc) => (
+        <a
+          key={doc.id}
+          href={`/uploads/documents/${doc.s3Key}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-100 transition"
+        >
+          📄 {doc.originalName}
+        </a>
+      ))}
+    </div>
+  </div>
+)}
               {d.adminComment && (
                 <p className="text-sm text-red-600 mt-2 p-2 bg-red-50 rounded border-l-4 border-red-400">
                   💬 {d.adminComment}

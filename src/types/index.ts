@@ -33,7 +33,10 @@ export interface Vehicle {
 export interface DocumentFile {
   id: string;
   originalName: string;
+  s3Key: string;
   mimeType: string;
+  sizeBytes?: number;
+  createdAt?: string;
 }
 
 export interface Dossier {
