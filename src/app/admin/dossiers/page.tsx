@@ -27,6 +27,7 @@ export default function AdminDossiersPage() {
     const params = filter === 'ALL' ? undefined : { status: filter };
     api.getAllDossiers(params).then(setDossiers);
   }
+  
 
   useEffect(() => {
     load();
@@ -110,26 +111,33 @@ export default function AdminDossiersPage() {
                 Client : <span className="font-medium">{d.user?.email || 'Inconnu'}</span>
                 {' • '}Déposé le {new Date(d.createdAt).toLocaleDateString('fr-FR')}
               </p>
+              <div className="mt-2 p-2 bg-yellow-100 rounded text-xs font-mono">
+            DEBUG: {d.documents ? d.documents.length : 'undefined'} documents
+          </div>
 
               {/* DOCUMENTS TRANSIS PAR LE CLIENT */}
               {d.documents && d.documents.length > 0 && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
-                  <p className="text-sm font-semibold text-slate-900 mb-2">Documents transmis :</p>
-                  <div className="flex flex-wrap gap-2">
-                    {d.documents.map((doc) => (
-                      <a
-                        key={doc.id}
-                        href={`/uploads/documents/${doc.s3Key}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-100 transition flex items-center gap-1"
-                      >
-                        📄 {doc.originalName}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
+  <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+    <p className="text-sm font-semibold text-slate-900 mb-2">
+      📎 Documents transmis ({d.documents.length})
+    </p>
+    <div className="flex flex-wrap gap-2">
+      {d.documents.map((doc) => (
+        <a
+          key={doc.id}
+          href={`/uploads/documents/${doc.s3Key}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs bg-white text-blue-700 px-3 py-1.5 rounded-full border border-blue-200 hover:bg-blue-100 transition"
+        >
+          📄 {doc.originalName}
+        </a>
+      ))}
+    </div>
+  </div>
+)}
+
+
 
               {d.adminComment && (
                 <p className="text-sm text-red-600 mt-2 p-2 bg-red-50 rounded border-l-4 border-red-400">

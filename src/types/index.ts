@@ -31,23 +31,23 @@ export interface Vehicle {
 
 export interface DocumentFile {
   id: string;
+  dossierId: string;
   originalName: string;
   s3Key: string;
   mimeType: string;
-  sizeBytes?: number;
-  createdAt?: string;
+  sizeBytes: number;
+  uploadedAt?: string;
 }
 
 
 export interface Dossier {
   id: string;
-  documents?: DocumentFile[];
   type: DossierType;
   status: DossierStatus;
   vehicle: Vehicle;
-  user?: { email?: string }; 
+  user?: { email?: string; firstName?: string; lastName?: string };
   createdAt: string;
   updatedAt: string;
-
+  documents?: DocumentFile[];
   adminComment?: string;
 }

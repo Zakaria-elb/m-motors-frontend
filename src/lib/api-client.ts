@@ -82,7 +82,7 @@ class ApiClient {
     return this.fetch(`/dossiers/${id}`, { method: 'DELETE' });
   }
   
-  getAllDossiers(params?: Record<string, string>) {
+  getAllDossiers(params?: { status?: string }) {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return this.fetch(`/admin/dossiers${qs}`);
   }
